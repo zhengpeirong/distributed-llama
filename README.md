@@ -1,6 +1,6 @@
 ![Distributed Llama](.github/cover.png)
 
-# Distributed Llama
+# Distributed Llama MPI
 
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/b4rtaz/distributed-llama/.github%2Fworkflows%2Fmain.yml?style=flat-square)](https://github.com/b4rtaz/distributed-llama/actions) [![License: MIT](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square)](/LICENSE)
 
@@ -10,6 +10,10 @@ Run LLMs on weak devices or make powerful devices even more powerful by distribu
   <img src=".github/8raspi.jpg" width="50%" alt="Distributed Llama running on 8 Raspberry Pi 4B devices" /><br />
   <sub><sup>Distributed Llama running Llama 2 70B on 8 Raspberry Pi 4B devices</sup></sub>
 </p>
+
+
+This project was forked from the [distributed-llama](https://github.com/b4rtaz/distributed-llama) repository.
+
 
 **Supported models:**
 * Llama 2 (7B, 13B, 70B) chat and non-chat versions,
