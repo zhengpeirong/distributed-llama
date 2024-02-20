@@ -1,6 +1,6 @@
 ![Distributed Llama](.github/cover.png)
 
-# Distributed Llama
+# Distributed Llama MPI
 
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/b4rtaz/distributed-llama/.github%2Fworkflows%2Fmain.yml?style=flat-square)](https://github.com/b4rtaz/distributed-llama/actions) [![License: MIT](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square)](/LICENSE) [![X: b4rtaz](https://img.shields.io/twitter/follow/b4rtaz.svg?style=social)](https://x.com/b4rtaz)
 
@@ -11,7 +11,7 @@ Run LLMs on weak devices or make powerful devices even more powerful by distribu
   <sub><sup>Distributed Llama running on 8 Raspberry Pi 4B devices</sup></sub>
 </p>
 
-This project was initiated based on the [llama2.c](https://github.com/karpathy/llama2.c) repository. Big thanks to [@karpathy](https://github.com/karpathy) and other contributors. Most ARM optimizations come from the [llama.cpp](https://github.com/ggerganov/llama.cpp) project.
+This project was forked from the [distributed-llama](https://github.com/b4rtaz/distributed-llama) repository. changed communication from sockets to MPI.
 
 📃 [Read the report](https://raw.githubusercontent.com/b4rtaz/distributed-llama/main/report/report.pdf)
 
