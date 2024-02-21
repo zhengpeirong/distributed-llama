@@ -299,8 +299,9 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, SocketPool*
     assert(socketPool->nSockets == spec->nSlices - 1);
 
     const uint8_t sliceIndex = 0; // Root slice
+    // 创建空的主机transformer
     Transformer transformer(spec, sliceIndex);
-
+    // 初始化从机的节点ID、模型SPEC
     if (spec->nSlices > 1) {
         for (uint8_t sliceIndex = 1; sliceIndex < spec->nSlices; sliceIndex++) {
             unsigned int socketIndex = sliceIndex - 1;
@@ -310,58 +311,69 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, SocketPool*
     }
 
     char* w = data;
-
+    // 加载主机的tokenEmbeddingTable
     memcpy(transformer.tokenEmbeddingTable, w, transformer.tokenEmbeddingTableBytes);
+    // 模型文件地址偏移
     w += transformer.tokenEmbeddingTableBytes;
 
+    // 按照层数逐层加载attention的权重，并在加载过程中不断给从机发送数据
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
-
+        // 加载rms的参数
         memcpy(block->rmsAtt, w, block->rmsAttBytes);
         w += block->rmsAttBytes;
-
+        // 加载rms后线性层权重
         memcpy(block->rmsFfn, w, block->rmsFfnBytes);
         w += block->rmsFfnBytes;
-
+        // 加载Q、K、V权重
         w += loadSlicedMatmulWeights(spec->nSlices, block->q0Slice, w, block->q0, socketPool);
         w += loadSlicedMatmulWeights(spec->nSlices, block->k0Slice, w, block->k0, socketPool);
         w += loadSlicedMatmulWeights(spec->nSlices, block->v0Slice, w, block->v0, socketPool);
+        // 加载attention的线性映射的权重
         w += loadSlicedMatmulWeights(spec->nSlices, block->wo0Slice, w, block->wo0, socketPool);
+        // 加载FFN的权重
         w += loadSlicedMatmulWeights(spec->nSlices, block->w10Slice, w, block->w10, socketPool);
         w += loadSlicedMatmulWeights(spec->nSlices, block->w20Slice, w, block->w20, socketPool);
         w += loadSlicedMatmulWeights(spec->nSlices, block->w30Slice, w, block->w30, socketPool);
     }
 
+    // 加载最终rms的权重
     memcpy(transformer.rmsFinal, w, transformer.rmsFinalBytes);
     w += transformer.rmsFinalBytes;
 
+    // 一些没有实际意义的代码
     w += (spec->seqLen * spec->headSize / 2) * sizeof(float); // skip what used to be freq_cis_real (for RoPE)
     w += (spec->seqLen * spec->headSize / 2) * sizeof(float); // skip what used to be freq_cis_imag (for RoPE)
 
+    // 加载wcls
     memcpy(transformer.wcls, w, transformer.wclsBytes);
     w += transformer.wclsBytes;
 
+    // 检查加载是否成功
     size_t missedBytes = (long)(w - data) - spec->fileSize + sizeof(TransformerFileHeader);
     if (missedBytes != 0) {
         printf("Missed %ld bytes\n", missedBytes);
         exit(EXIT_FAILURE);
     }
-
+    // 加载结束
     printf("⏩ Loaded %ld bytes\n", (long)(w - data));
     return transformer;
 }
 
 Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
     uint8_t sliceIndex;
+    // 等待接收主机信息
     socket->read((char*)&sliceIndex, sizeof(uint8_t));
     socket->read((char*)spec, sizeof(TransformerSpec));
-
+    // 接收完成开始初始化
     printf("💡 sliceIndex: %d\n", sliceIndex);
     printf("💡 nSlices: %d\n", spec->nSlices);
 
     assert(sliceIndex >= 1);
+    // 创建从机空Transformer
     Transformer transformer(spec, sliceIndex);
 
+    // 加载矩阵权重系数
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
         size_t blockBytes = 0;

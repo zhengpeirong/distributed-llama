@@ -40,17 +40,19 @@ int inference(ProgramArgs* args) {
         return usage();
     }
 
+    // 初始化socket进行连接
     SocketPool* socketPool = SocketPool::connect(args->nWorkers, args->workerHosts, args->workerPorts);
     unsigned int nSlices = args->nWorkers + 1;
-
+    // 加载模型超参数
     TransformerSpec spec = Transformer::loadSpecFromFile(args->modelPath, nSlices, args->weightsFloatType, args->bufferFloatType);
 
     int steps = args->steps;
     if (steps > spec.seqLen) {
         steps = spec.seqLen;
     }
-
+    // 加载transformer模型
     Transformer transformer = Transformer::loadRootFromFile(args->modelPath, &spec, socketPool);
+    // 主机从机全部加载结束
     Inference inference = Inference(args->nThreads, &transformer, socketPool);
 
     socketPool->enableTurbo();
@@ -89,6 +91,7 @@ FloatType parseFloatType(char* val) {
 }
 
 int main(int argc, char *argv[]) {
+    // 注册体系结构相关计算函数
     initQuants();
 
     ProgramArgs args;
@@ -159,6 +162,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // 主机的 inference mode 为 inference，从机是worker
     if (args.mode != NULL) {
         if (strcmp(args.mode, "inference") == 0) {
             return inference(&args);
