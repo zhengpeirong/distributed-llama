@@ -336,6 +336,7 @@ int Sampler::sample(float* logits) {
     int next;
     if (temperature == 0.0f) {
         // greedy argmax sampling: take the token with the highest probability
+        // 温度低直接采用最高概率的预测
         next = sample_argmax(logits, vocab_size);
     } else {
         // apply the temperature to the logits
@@ -361,14 +362,20 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
     unsigned long long rngSeed = (unsigned int)time(NULL);
 
     Tokenizer tokenizer(tokenizerPath, spec->vocabSize);
+    // 将最高Logits值的Token作为下一个生成的Token。
     Sampler sampler(spec->vocabSize, temperature, topp, rngSeed);
 
     char emptyPrompt[] = "";
     if (prompt == NULL) { prompt = emptyPrompt; }
 
+     // 分词（Tokenization）：将原始文本拆分成词语或子序列的过程。这通常涉及到将文本分割成单词、标点符号或者其他语言单位的序列。例如，将句子 "I love natural language processing!" 分词后可能得到 ["I", "love", "natural", "language", "processing", "!"]。
+    // 映射（Mapping）：将分词得到的符号映射到预定义的词汇表或者标记集合中。这个步骤将每个分词映射到一个唯一的标记（token）。通常使用一个词汇表来存储所有可能的token，并为每个token分配一个唯一的整数编号。例如，词汇表中的token "love" 可能被映射为编号 231。
+    // 生成序列（Sequence Generation）：根据映射后的token编号，将原始文本转换成token序列。这个序列中的每个token都是一个整数，代表词汇表中的一个标记。例如，"I love natural language processing!" 可以被编码为 [45, 231, 76, 192, 956, 13]，其中每个数字代表词汇表中相应token的编号。
+
     // encode the (string) prompt into tokens sequence
     int numPromptTokens = 0;
     int* promptTokens = (int*)malloc((strlen(prompt)+3) * sizeof(int)); // +3 for '\0', ?BOS, ?EOS
+    // 获取prompt的token序列
     tokenizer.encode(prompt, 1, 0, promptTokens, &numPromptTokens);
     if (numPromptTokens < 1) {
         fprintf(stderr, "something is wrong, expected at least 1 prompt token\n");
@@ -393,6 +400,7 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
     unsigned long totalDetailedTime[NUM_TASKS] = {0};
     while (pos < steps) {
         unsigned long startTime = timeMs();
+        // 执行推理，得到推理输出，模型输出的Logits：在生成Token序列时，LLM实际上会计算每个可能Token的Logits。这些Logits表示了模型对每个Token的预测分数。在生成过程中，LLM会选择具有最高Logits值的Token作为下一个生成的Token。
         float* logits = inference->infer(token, pos);
 
         // inference->getStats(&inferenceTime, &transferTime);
@@ -400,6 +408,7 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
 
         socketPool->getStats(&sentBytes, &recvBytes);
 
+        // 获取下一个token，next
         // advance the state machine
         if (pos < numPromptTokens - 1) {
             // if we are still processing the input prompt, force the next prompt token
@@ -430,8 +439,9 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
         if (next == 1) { break; }
 
         // print the token as string, decode it with the Tokenizer object
+        // 将token转为字符并打印，token为上一个，next为当前token
         char* piece = tokenizer.decode(token, next);
-    
+
         printf("🔶 G %4ld ms I %4ld ms T %4ld ms S %6ld kB R %6ld kB ", generationTime, inferenceTime, transferTime, sentBytes / 1024, recvBytes / 1024);
         // for (unsigned int i = 0; i < NUM_TASKS; i++) {
         //     printf("\ndetailedTime[%u]: %4ld ms", i, detailedTime[i]);
@@ -439,6 +449,7 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
         safePrintf(piece); // same as printf("%s", piece), but skips "unsafe" bytes
         printf("\n");
         fflush(stdout);
+        // 继续这个过程直到当前token即next的值为1即eos
         token = next;
     }
 

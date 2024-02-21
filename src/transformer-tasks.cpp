@@ -16,6 +16,7 @@ static unsigned long long total_time_above_workers = 0;
     TransformerBlock* block = transformer->blocks[ctx->currentBlockIndex]; \
     TransformerSpec* spec = transformer->spec;
 
+// scatter
 void syncUnitBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t bufferIndex) {
     char* buffer = ctx->transformer->buffer->getUnit(bufferIndex);
     size_t bufferBytes = ctx->transformer->buffer->getUnitBytes(bufferIndex);
@@ -39,6 +40,7 @@ void syncUnitBuffer(unsigned int nThreads, unsigned int threadIndex, Transformer
     }
 }
 
+// gather
 void syncSliceOfSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t bufferIndex) {
     size_t bufferBytes = ctx->transformer->buffer->getSlicedBytes(bufferIndex);
     if (ctx->socketPool != NULL) {
@@ -64,6 +66,7 @@ void syncSliceOfSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, Tr
     }
 }
 
+// broadcast
 void syncMissingSlicesOfSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t bufferIndex) {
     size_t sliceBytes = ctx->transformer->buffer->getSlicedBytes(bufferIndex);
     if (ctx->socketPool != NULL) {
@@ -139,6 +142,7 @@ void dequantizeSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, Tra
 
 //
 
+// 单机单线程reduction求rms
 int rmsAtt(TASK_ARGS) {
     TASK_VARIABLES;
     if (threadIndex == 0) {
@@ -146,26 +150,26 @@ int rmsAtt(TASK_ARGS) {
     }
     return TASK_CONTINUE;
 }
-
+// rmsNorm
 int rmsAttNorm(TASK_ARGS) {
     TASK_VARIABLES;
     float* xb = (float*)transformer->buffer->getUnit(TB_UNIT_XB);
     rmsnorm(xb, transformer->x, transformer->rms, block->rmsAtt, spec->dim, nThreads, threadIndex);
     return TASK_CONTINUE;
 }
-
+// 量化RMSNorm的结果
 int quantizeRmsAtt(TASK_ARGS) {
     TASK_VARIABLES;
     quantizeUnitBuffer(nThreads, threadIndex, ctx, TB_UNIT_XB, TB_UNIT_XB_QUANTIZED);
     return TASK_CONTINUE;
 }
-
+// 将RMSNorm结果分发
 int syncRmsAtt(TASK_ARGS) {
     TASK_VARIABLES;
     syncUnitBuffer(nThreads, threadIndex, ctx, TB_UNIT_XB_QUANTIZED);
     return TASK_CONTINUE;
 }
-
+// 分布式多线程算Q、K、V
 int qkv(TASK_ARGS) {
     TASK_VARIABLES;
 
@@ -179,7 +183,7 @@ int qkv(TASK_ARGS) {
     matmul(spec->weightsFloatType, spec->bufferFloatType, v0, xbq, block->v0, block->v0Slice->n, block->v0Slice->d0, nThreads, threadIndex);
     return TASK_CONTINUE;
 }
-
+// 分布式多线程量化
 int quantizeQkv(TASK_ARGS) {
     TASK_VARIABLES;
     quantizeSlicedBuffer(nThreads, threadIndex, ctx, false, TB_SLICED_Q, TB_SLICED_Q_QUANTIZED);
@@ -187,7 +191,7 @@ int quantizeQkv(TASK_ARGS) {
     quantizeSlicedBuffer(nThreads, threadIndex, ctx, false, TB_SLICED_V, TB_SLICED_V_QUANTIZED);
     return TASK_CONTINUE;
 }
-
+// gather QKV
 int syncQkv(TASK_ARGS) {
     TASK_VARIABLES;
     syncSliceOfSlicedBuffer(nThreads, threadIndex, ctx, TB_SLICED_Q_QUANTIZED);
@@ -196,7 +200,7 @@ int syncQkv(TASK_ARGS) {
     // if (ctx->socketPool != NULL && threadIndex == 0) { float* v = (float*)block->q0; printf("q0 (%d): %f %f %f %f %f %f\n", ctx->currentBlockIndex, v[0], v[1], v[2], v[3], v[4], v[5]); }
     return TASK_CONTINUE;
 }
-
+// 反量化 QKV
 int dequantizeQkv(TASK_ARGS) {
     TASK_VARIABLES;
     dequantizeSlicedBuffer(nThreads, threadIndex, ctx, false, TB_SLICED_Q_QUANTIZED, TB_SLICED_Q);
@@ -204,7 +208,7 @@ int dequantizeQkv(TASK_ARGS) {
     dequantizeSlicedBuffer(nThreads, threadIndex, ctx, false, TB_SLICED_V_QUANTIZED, TB_SLICED_V);
     return TASK_CONTINUE;
 }
-
+// 单线程单机多头注意力
 int multiheadAtt(TASK_ARGS) {
     TASK_VARIABLES;
     if (threadIndex != 0) {
@@ -219,9 +223,11 @@ int multiheadAtt(TASK_ARGS) {
     int hiddenDim =  spec->hiddenDim;
     int headSize = dim / spec->nHeads;
     int pos = transformer->pos;
-
-    float* q = (float*)transformer->buffer->getUnit(TB_SLICED_Q);    
+    // 获取q
+    float* q = (float*)transformer->buffer->getUnit(TB_SLICED_Q);
+    // 获取输入buffer
     float* xb = (float*)transformer->buffer->getUnit(TB_UNIT_XB);
+    // 保存kvCache
     float* k = block->keyCache + pos * kvDim;
     float* v = block->valueCache + pos * kvDim;
 
@@ -251,13 +257,14 @@ int multiheadAtt(TASK_ARGS) {
         // get the query vector for this head
         float* _q = q + h * headSize;
         // attention scores for this head
-        float* _att = block->att + h * spec->seqLen;
+        float* _att = block->att + h * spec->seqLen; // attention = softmax(Q dot K)
         // iterate over all timesteps, including the current one
         for (int t = 0; t <= pos; t++) {
             // get the key vector for this head and at this timestep
             float* k = block->keyCache + t * kvDim + (h / kvMul) * headSize;
             // calculate the attention score as the dot product of q and k
             float score = dotProduct(_q, k, headSize) / sqrtf(headSize);
+            // 除以根号dhead用于平滑所以叫做scaled 点积注意力机制
             _att[t] = score;
         }
 
@@ -265,7 +272,7 @@ int multiheadAtt(TASK_ARGS) {
         softmax(_att, pos + 1);
 
         // weighted sum of the values, store back into xb
-        float* _xb = xb + h * headSize;
+        float* _xb = xb + h * headSize; // xb = (attention dot V)
         memset(_xb, 0, headSize * sizeof(float));
         for (int t = 0; t <= pos; t++) {
             // get the value vector for this head and at this timestep
@@ -298,6 +305,7 @@ int syncMultiheadAtt(TASK_ARGS) {
     return TASK_CONTINUE;
 }
 
+// 输出的投影
 int att(TASK_ARGS) {
     TASK_VARIABLES;
 
@@ -336,7 +344,7 @@ int rmfFfn(TASK_ARGS) {
         float* xb2 = (float*)transformer->buffer->getUnit(TB_SLICED_XB2);
         float* xb = (float*)transformer->buffer->getUnit(TB_UNIT_XB);
         float* x = (float*)transformer->x;
-
+        // shortcut
         for (int i = 0; i < spec->dim; i++) {
             x[i] += xb2[i];
         }
@@ -366,6 +374,10 @@ int syncRmfFfn(TASK_ARGS) {
     return TASK_CONTINUE;
 }
 
+// 单隐层FFN feed-forword-network
+// 输入->隐藏层->输出
+// 有两个权重
+// FFN算隐层
 int ffn(TASK_ARGS) {
     TASK_VARIABLES;
 
@@ -407,6 +419,7 @@ int syncFfnB(TASK_ARGS) {
     return TASK_CONTINUE;
 }
 
+// FFN算输出
 int ffn2(TASK_ARGS) {
     TASK_VARIABLES;
 
@@ -441,7 +454,7 @@ int mergeFfn2(TASK_ARGS) {
     if (threadIndex == 0) {
         float* x = transformer->x;
         float* xb2 = (float*)transformer->buffer->getUnit(TB_SLICED_XB2);
-
+        // shortcut
         for (int i = 0; i < spec->dim; i++) {
             x[i] += xb2[i];
         }
@@ -491,6 +504,7 @@ int finalize(TASK_ARGS) {
     return TASK_CONTINUE;
 }
 
+// 从embedding到logits的核心推理执行过程
 static TaskLoopTask inferenceTasks[] = {
     { rmsAtt, TASK_TYPE_INFERENCE },
     { rmsAttNorm, TASK_TYPE_INFERENCE },
@@ -543,15 +557,16 @@ Inference::~Inference() {
 
 float* Inference::infer(int token, int pos) {
     transformer->pos = pos;
-
+    // 获取当前token的embedding
     float* contentRow = ((float*)transformer->tokenEmbeddingTable) + token * transformer->spec->dim;
+    // 将embedding赋值到transformer的输入x
     memcpy(transformer->x, contentRow, transformer->spec->dim * sizeof(float));
-
+    // 重置transformer的推理状态
     context.finalize = false;
     context.currentBlockIndex = 0;
-
+    // 执行推理
     taskLoop->run();
-
+    // 返回logits，即为每个token的概率
     return transformer->logits;
 }
 

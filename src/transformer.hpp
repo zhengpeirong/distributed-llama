@@ -64,17 +64,17 @@ struct TransformerSpec {
     size_t fileSize;
     int version;
     TransformerArchType archType;
-    int dim;
-    int nLayers;
-    int nHeads;
-    int headSize;
-    int nKvHeads;
-    int nExperts;
+    int dim;// embedding dim
+    int nLayers;// num of transfomer layers
+    int nHeads;// num of Q heads
+    int headSize;// embedding dim / num of heads
+    int nKvHeads;// num of KV heads
+    int nExperts; 
     int nActiveExperts;
-    int seqLen;
-    int hiddenDim;
+    int seqLen;// kvcache长度
+    int hiddenDim;// dim of FFN hidden layer
     TransformerHiddenAct hiddenAct;
-    int kvDim;
+    int kvDim;// headSize * nKvHeads
     int vocabSize;
     float ropeTheta;
 
@@ -174,7 +174,7 @@ public:
     TransformerBlock** blocks;
     TransformerBuffer* buffer;
     uint8_t sliceIndex;
-
+    // 主机专属的部分非attention内部的计算
     size_t tokenEmbeddingTableBytes;
     char* tokenEmbeddingTable;
     size_t rmsFinalBytes;
@@ -182,19 +182,25 @@ public:
     size_t wclsBytes;
     char* wcls;
 
+    // rms的λ即scale
     float rms;
+    // 当前token的position
     int pos;
     float* x;
     float* logits;
 
+    // 释放Transformer buffer
     ~Transformer();
 
     static TransformerSpec loadSpecFromFile(const char* path, const unsigned int nSlices, FloatType weightsFloatType, FloatType bufferFloatType);
     static Transformer loadRootFromFile(const char* path, TransformerSpec* spec, SocketPool* socketPool);
+    // 主机加载权重
     static Transformer loadRoot(char* data, TransformerSpec* spec, SocketPool* socketPool);
+    // 从机加载权重
     static Transformer loadSlice(TransformerSpec* spec, Socket* socket);
 
 private:
+    // 开 Transformer buffer
     Transformer(TransformerSpec* spec, uint8_t sliceIndex);
 };
 

@@ -478,8 +478,9 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, SocketPool*
     assert(socketPool->nSockets == spec->nSlices - 1);
 
     const uint8_t sliceIndex = 0; // Root slice
+    // 创建空的主机transformer
     Transformer transformer(spec, sliceIndex);
-
+    // 初始化从机的节点ID、模型SPEC
     if (spec->nSlices > 1) {
         for (uint8_t sliceIndex = 1; sliceIndex < spec->nSlices; sliceIndex++) {
             unsigned int socketIndex = sliceIndex - 1;
@@ -490,11 +491,14 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, SocketPool*
 
     char* w = data;
 
+    // 加载主机的tokenEmbeddingTable，模型文件地址偏移
     w += loadRootMatmulWeights(&transformer.tokenEmbeddingTable, w, transformer.tokenEmbeddingTableBytes);
 
+    // 按照层数逐层加载attention的权重，并在加载过程中不断给从机发送数据
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
 
+        // 加载Q、K、V权重
         w += loadSlicedMatmulWeights(spec->nSlices, block->q0Slice, w, &block->q0, socketPool);
         w += loadSlicedMatmulWeights(spec->nSlices, block->k0Slice, w, &block->k0, socketPool);
         w += loadSlicedMatmulWeights(spec->nSlices, block->v0Slice, w, &block->v0, socketPool);
@@ -526,27 +530,32 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, SocketPool*
     w += loadRootMatmulWeights(&transformer.rmsFinal, w, transformer.rmsFinalBytes);
     w += loadRootMatmulWeights(&transformer.wcls, w, transformer.wclsBytes);
 
+    // 检查加载是否成功
     long missedBytes = (long)(w - data) - spec->fileSize + spec->headerSize;
+
     if (missedBytes != 0) {
         printf("Missed %ld bytes\n", missedBytes);
         exit(EXIT_FAILURE);
     }
-
+    // 加载结束
     printf("⏩ Loaded %ld bytes\n", (long)(w - data));
     return transformer;
 }
 
 Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
     uint8_t sliceIndex;
+    // 等待接收主机信息
     socket->read((char*)&sliceIndex, sizeof(uint8_t));
     socket->read((char*)spec, sizeof(TransformerSpec));
-
+    // 接收完成开始初始化
     printf("💡 sliceIndex: %d\n", sliceIndex);
     printf("💡 nSlices: %d\n", spec->nSlices);
 
     assert(sliceIndex >= 1);
+    // 创建从机空Transformer
     Transformer transformer(spec, sliceIndex);
 
+    // 加载矩阵权重系数
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
         size_t blockBytes = 0;

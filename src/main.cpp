@@ -284,10 +284,12 @@ int run(ProgramArgs* args, void (*program)(Inference* inference, SocketPool* soc
         return usage("Tokenizer is required");
     }
 
+    // 初始化socket进行连接
     SocketPool* socketPool = SocketPool::connect(args->nWorkers, args->workerHosts, args->workerPorts);
     unsigned int nSlices = args->nWorkers + 1;
     unsigned long long rngSeed = (unsigned int)time(NULL);
 
+    // 加载模型超参数
     TransformerSpec spec = Transformer::loadSpecFromFile(args->modelPath, nSlices, args->weightsFloatType, args->bufferFloatType);
     TransformerArch arch = getArch(&spec);
 
@@ -296,9 +298,12 @@ int run(ProgramArgs* args, void (*program)(Inference* inference, SocketPool* soc
     } else if (args->steps > spec.seqLen) {
         args->steps = spec.seqLen;
     }
-
+    // 加载transformer模型
     Transformer transformer = Transformer::loadRootFromFile(args->modelPath, &spec, socketPool);
+
+    // 主机从机全部加载结束
     Inference inference = Inference(&arch, args->nThreads, &transformer, socketPool);
+
 
     Tokenizer tokenizer(args->tokenizerPath, spec.vocabSize);
     Sampler sampler(spec.vocabSize, args->temperature, args->topp, rngSeed);
@@ -336,6 +341,7 @@ FloatType parseFloatType(char* val) {
 }
 
 int main(int argc, char *argv[]) {
+    // 注册体系结构相关计算函数
     initQuants();
 
     ProgramArgs args;
@@ -406,6 +412,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // 主机的 inference mode 为 inference，从机是worker
     if (args.mode != NULL) {
         if (strcmp(args.mode, "inference") == 0) {
             return run(&args, generate);
