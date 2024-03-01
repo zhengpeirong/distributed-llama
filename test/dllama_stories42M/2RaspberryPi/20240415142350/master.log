@@ -1,0 +1,316 @@
+Test 0
+💡 dim: 512
+💡 hiddenDim: 1376
+💡 nLayers: 8
+💡 nHeads: 8
+💡 nKvHeads: 8
+💡 vocabSize: 32000
+💡 seqLen: 1024
+💡 nSlices: 2
+⏩ Loaded 232556544 bytes
+🔶 G   50 ms I   10 ms T   40 ms S  49477 kB R     61 kB "
+🔶 G   58 ms I   10 ms T   48 ms S     69 kB R     61 kB Hello
+🔶 G   59 ms I    8 ms T   51 ms S     69 kB R     61 kB  world
+🔶 G   48 ms I    8 ms T   40 ms S     69 kB R     61 kB "
+🔶 G   50 ms I   11 ms T   39 ms S     69 kB R     61 kB !
+🔶 G   54 ms I   12 ms T   42 ms S     69 kB R     61 kB 
+
+🔶 G   47 ms I    7 ms T   40 ms S     69 kB R     61 kB The
+🔶 G   47 ms I    6 ms T   40 ms S     69 kB R     61 kB  little
+🔶 G   51 ms I    9 ms T   42 ms S     69 kB R     61 kB  girl
+🔶 G   46 ms I    8 ms T   38 ms S     69 kB R     61 kB  was
+🔶 G   46 ms I    8 ms T   38 ms S     69 kB R     61 kB  so
+🔶 G   45 ms I   10 ms T   35 ms S     69 kB R     61 kB  excited
+🔶 G   47 ms I    7 ms T   40 ms S     69 kB R     61 kB .
+🔶 G   47 ms I   10 ms T   37 ms S     69 kB R     61 kB  She
+🔶 G   47 ms I    8 ms T   39 ms S     69 kB R     61 kB  ran
+🔶 G   47 ms I   10 ms T   36 ms S     69 kB R     61 kB  around
+🔶 G   45 ms I    9 ms T   36 ms S     69 kB R     61 kB  and
+🔶 G   45 ms I    7 ms T   38 ms S     69 kB R     61 kB  around
+🔶 G   45 ms I    7 ms T   38 ms S     69 kB R     61 kB ,
+🔶 G   44 ms I    6 ms T   37 ms S     69 kB R     61 kB  until
+🔶 G   45 ms I    5 ms T   39 ms S     69 kB R     61 kB  she
+🔶 G   45 ms I    4 ms T   40 ms S     69 kB R     61 kB  was
+🔶 G   44 ms I    7 ms T   37 ms S     69 kB R     61 kB  so
+🔶 G   48 ms I    9 ms T   38 ms S     69 kB R     61 kB  d
+🔶 G   46 ms I    6 ms T   39 ms S     69 kB R     61 kB iz
+🔶 G   46 ms I    4 ms T   42 ms S     69 kB R     61 kB zy
+🔶 G   47 ms I    7 ms T   39 ms S     69 kB R     61 kB  she
+🔶 G   47 ms I    6 ms T   41 ms S     69 kB R     61 kB  almost
+🔶 G   46 ms I    5 ms T   41 ms S     69 kB R     61 kB  fell
+🔶 G   43 ms I    5 ms T   38 ms S     69 kB R     61 kB  down
+🔶 G   47 ms I   13 ms T   34 ms S     69 kB R     61 kB .
+🔶 G   44 ms I    6 ms T   38 ms S     69 kB R     61 kB 
+
+🔶 G   47 ms I   10 ms T   37 ms S     69 kB R     61 kB The
+🔶 G   45 ms I    7 ms T   37 ms S     69 kB R     61 kB  little
+🔶 G   46 ms I    8 ms T   38 ms S     69 kB R     61 kB  girl
+🔶 G   48 ms I    9 ms T   39 ms S     69 kB R     61 kB '
+🔶 G   45 ms I    8 ms T   36 ms S     69 kB R     61 kB s
+🔶 G   44 ms I    4 ms T   40 ms S     69 kB R     61 kB  m
+🔶 G   46 ms I    9 ms T   36 ms S     69 kB R     61 kB um
+🔶 G   45 ms I    7 ms T   37 ms S     69 kB R     61 kB  said
+🔶 G   45 ms I    8 ms T   36 ms S     69 kB R     61 kB ,
+🔶 G   43 ms I   10 ms T   33 ms S     69 kB R     61 kB  "
+🔶 G   44 ms I    7 ms T   36 ms S     69 kB R     61 kB Why
+🔶 G   46 ms I   10 ms T   36 ms S     69 kB R     61 kB  don
+🔶 G   46 ms I   12 ms T   33 ms S     69 kB R     61 kB '
+🔶 G   44 ms I    7 ms T   37 ms S     69 kB R     61 kB t
+🔶 G   41 ms I    6 ms T   35 ms S     69 kB R     61 kB  you
+🔶 G   45 ms I    9 ms T   35 ms S     69 kB R     61 kB  take
+🔶 G   44 ms I    8 ms T   36 ms S     69 kB R     61 kB  a
+🔶 G   46 ms I    6 ms T   40 ms S     69 kB R     61 kB  rest
+🔶 G   45 ms I    6 ms T   38 ms S     69 kB R     61 kB ?"
+🔶 G   44 ms I   12 ms T   32 ms S     69 kB R     61 kB 
+
+🔶 G   43 ms I    5 ms T   38 ms S     69 kB R     61 kB The
+🔶 G   45 ms I    8 ms T   37 ms S     69 kB R     61 kB  little
+🔶 G   47 ms I    7 ms T   39 ms S     69 kB R     61 kB  girl
+🔶 G   44 ms I    7 ms T   37 ms S     69 kB R     61 kB  nod
+🔶 G   43 ms I    7 ms T   36 ms S     69 kB R     61 kB ded
+🔶 G   43 ms I   11 ms T   32 ms S     69 kB R     61 kB  and
+🔶 G   46 ms I    5 ms T   40 ms S     69 kB R     61 kB  laid
+🔶 G   45 ms I    9 ms T   36 ms S     69 kB R     61 kB  down
+🔶 G   44 ms I   14 ms T   30 ms S     69 kB R     61 kB  on
+🔶 G   47 ms I    9 ms T   37 ms S     69 kB R     61 kB  the
+🔶 G   47 ms I    6 ms T   40 ms S     69 kB R     61 kB  floor
+🔶 G   45 ms I   10 ms T   35 ms S     69 kB R     61 kB .
+🔶 G   45 ms I    9 ms T   36 ms S     69 kB R     61 kB  She
+🔶 G   46 ms I    5 ms T   41 ms S     69 kB R     61 kB  closed
+🔶 G   46 ms I    8 ms T   38 ms S     69 kB R     61 kB  her
+🔶 G   45 ms I    7 ms T   38 ms S     69 kB R     61 kB  eyes
+🔶 G   44 ms I    9 ms T   35 ms S     69 kB R     61 kB  and
+🔶 G   44 ms I    6 ms T   37 ms S     69 kB R     61 kB  took
+🔶 G   45 ms I    9 ms T   35 ms S     69 kB R     61 kB  a
+🔶 G   46 ms I    6 ms T   39 ms S     69 kB R     61 kB  deep
+🔶 G   43 ms I    5 ms T   38 ms S     69 kB R     61 kB  breath
+🔶 G   46 ms I    7 ms T   39 ms S     69 kB R     61 kB .
+🔶 G   45 ms I   10 ms T   35 ms S     69 kB R     61 kB 
+
+🔶 G   45 ms I   10 ms T   34 ms S     69 kB R     61 kB S
+🔶 G   44 ms I    8 ms T   36 ms S     69 kB R     61 kB ud
+🔶 G   45 ms I    7 ms T   38 ms S     69 kB R     61 kB den
+🔶 G   43 ms I   10 ms T   33 ms S     69 kB R     61 kB ly
+🔶 G   46 ms I    5 ms T   41 ms S     69 kB R     61 kB ,
+🔶 G   46 ms I    7 ms T   39 ms S     69 kB R     61 kB  the
+🔶 G   45 ms I    8 ms T   37 ms S     69 kB R     61 kB  little
+🔶 G   46 ms I    7 ms T   39 ms S     69 kB R     61 kB  girl
+🔶 G   46 ms I    5 ms T   40 ms S     69 kB R     61 kB  heard
+🔶 G   44 ms I    7 ms T   37 ms S     69 kB R     61 kB  a
+🔶 G   45 ms I    9 ms T   36 ms S     69 kB R     61 kB  voice
+🔶 G   45 ms I    9 ms T   35 ms S     69 kB R     61 kB .
+🔶 G   45 ms I    9 ms T   36 ms S     69 kB R     61 kB  She
+🔶 G   44 ms I   10 ms T   33 ms S     69 kB R     61 kB  opened
+🔶 G   45 ms I    6 ms T   38 ms S     69 kB R     61 kB  her
+🔶 G   43 ms I    7 ms T   36 ms S     69 kB R     61 kB  eyes
+🔶 G   46 ms I    7 ms T   39 ms S     69 kB R     61 kB  and
+🔶 G   45 ms I    6 ms T   38 ms S     69 kB R     61 kB  saw
+🔶 G   46 ms I   12 ms T   33 ms S     69 kB R     61 kB  a
+🔶 G   46 ms I    9 ms T   37 ms S     69 kB R     61 kB  small
+🔶 G   44 ms I    3 ms T   40 ms S     69 kB R     61 kB  fair
+🔶 G   44 ms I    6 ms T   38 ms S     69 kB R     61 kB y
+🔶 G   44 ms I   10 ms T   34 ms S     69 kB R     61 kB .
+🔶 G   44 ms I    8 ms T   36 ms S     69 kB R     61 kB 
+
+🔶 G   49 ms I    8 ms T   40 ms S     69 kB R     61 kB The
+🔶 G   47 ms I    9 ms T   37 ms S     69 kB R     61 kB  fair
+🔶 G   49 ms I    9 ms T   40 ms S     69 kB R     61 kB y
+🔶 G   47 ms I    6 ms T   41 ms S     69 kB R     61 kB  said
+🔶 G   47 ms I   10 ms T   37 ms S     69 kB R     61 kB ,
+🔶 G   47 ms I    7 ms T   39 ms S     69 kB R     61 kB  "
+🔶 G   47 ms I    7 ms T   40 ms S     69 kB R     61 kB Hello
+🔶 G   46 ms I    9 ms T   36 ms S     69 kB R     61 kB !
+🔶 G   48 ms I    6 ms T   41 ms S     69 kB R     61 kB  I
+🔶 G   47 ms I    8 ms T   39 ms S     69 kB R     61 kB  am
+🔶 G   48 ms I    9 ms T   38 ms S     69 kB R     61 kB  the
+🔶 G   48 ms I   14 ms T   34 ms S     69 kB R     61 kB  fair
+🔶 G   50 ms I    8 ms T   41 ms S     69 kB R     61 kB y
+🔶 G   48 ms I    6 ms T   42 ms S     69 kB R     61 kB  of
+🔶 G   51 ms I    8 ms T   43 ms S     69 kB R     61 kB  the
+🔶 G   46 ms I    9 ms T   36 ms S     69 kB R     61 kB  world
+🔶 G   50 ms I   12 ms T   37 ms S     69 kB R     61 kB .
+🔶 G   47 ms I    7 ms T   40 ms S     69 kB R     61 kB  I
+🔶 G   51 ms I   14 ms T   36 ms S     69 kB R     61 kB  have
+🔶 G   49 ms I   12 ms T   37 ms S     69 kB R     61 kB  come
+🔶 G   48 ms I   10 ms T   38 ms S     69 kB R     61 kB  to
+🔶 G   48 ms I   12 ms T   36 ms S     69 kB R     61 kB  give
+🔶 G   47 ms I   10 ms T   37 ms S     69 kB R     61 kB  you
+🔶 G   48 ms I    5 ms T   42 ms S     69 kB R     61 kB  a
+🔶 G   45 ms I   11 ms T   34 ms S     69 kB R     61 kB  special
+🔶 G   46 ms I    7 ms T   39 ms S     69 kB R     61 kB  gift
+🔶 G   46 ms I   10 ms T   36 ms S     69 kB R     61 kB ."
+🔶 G   44 ms I    8 ms T   36 ms S     69 kB R     61 kB 
+
+🔶 G   48 ms I    4 ms T   43 ms S     69 kB R     61 kB The
+🔶 G   48 ms I    9 ms T   39 ms S     69 kB R     61 kB  little
+🔶 G   48 ms I    9 ms T   39 ms S     69 kB R     61 kB  girl
+🔶 G   48 ms I   11 ms T   37 ms S     69 kB R     61 kB  was
+🔶 G   45 ms I    8 ms T   37 ms S     69 kB R     61 kB  so
+🔶 G   48 ms I    9 ms T   38 ms S     69 kB R     61 kB  excited
+🔶 G   47 ms I    7 ms T   40 ms S     69 kB R     61 kB .
+🔶 G   45 ms I   11 ms T   34 ms S     69 kB R     61 kB  She
+🔶 G   48 ms I    9 ms T   38 ms S     69 kB R     61 kB  asked
+🔶 G   46 ms I   11 ms T   35 ms S     69 kB R     61 kB ,
+🔶 G   48 ms I    5 ms T   43 ms S     69 kB R     61 kB  "
+🔶 G   48 ms I   10 ms T   37 ms S     69 kB R     61 kB What
+🔶 G   48 ms I   10 ms T   37 ms S     69 kB R     61 kB  is
+🔶 G   47 ms I    8 ms T   38 ms S     69 kB R     61 kB  it
+🔶 G   46 ms I    9 ms T   37 ms S     69 kB R     61 kB ?"
+🔶 G   49 ms I   10 ms T   38 ms S     69 kB R     61 kB 
+
+🔶 G   47 ms I    7 ms T   39 ms S     69 kB R     61 kB The
+🔶 G   49 ms I    9 ms T   40 ms S     69 kB R     61 kB  fair
+🔶 G   47 ms I   11 ms T   36 ms S     69 kB R     61 kB y
+🔶 G   47 ms I    5 ms T   41 ms S     69 kB R     61 kB  said
+🔶 G   46 ms I   14 ms T   31 ms S     69 kB R     61 kB ,
+🔶 G   47 ms I   10 ms T   36 ms S     69 kB R     61 kB  "
+🔶 G   45 ms I    8 ms T   37 ms S     69 kB R     61 kB It
+🔶 G   47 ms I    9 ms T   37 ms S     69 kB R     61 kB  is
+🔶 G   46 ms I   13 ms T   33 ms S     69 kB R     61 kB  something
+🔶 G   46 ms I   10 ms T   36 ms S     69 kB R     61 kB  you
+🔶 G   47 ms I    9 ms T   38 ms S     69 kB R     61 kB  can
+🔶 G   49 ms I   10 ms T   38 ms S     69 kB R     61 kB  use
+🔶 G   47 ms I    9 ms T   38 ms S     69 kB R     61 kB  to
+🔶 G   48 ms I    6 ms T   42 ms S     69 kB R     61 kB  help
+🔶 G   45 ms I    9 ms T   35 ms S     69 kB R     61 kB  others
+🔶 G   42 ms I    5 ms T   37 ms S     69 kB R     61 kB .
+🔶 G   50 ms I    8 ms T   41 ms S     69 kB R     61 kB  Do
+🔶 G   48 ms I    8 ms T   40 ms S     69 kB R     61 kB  you
+🔶 G   50 ms I   13 ms T   37 ms S     69 kB R     61 kB  want
+🔶 G   48 ms I    8 ms T   39 ms S     69 kB R     61 kB  to
+🔶 G   49 ms I    7 ms T   42 ms S     69 kB R     61 kB  help
+🔶 G   49 ms I   10 ms T   38 ms S     69 kB R     61 kB  me
+🔶 G   50 ms I   11 ms T   38 ms S     69 kB R     61 kB ?"
+🔶 G   48 ms I    9 ms T   39 ms S     69 kB R     61 kB 
+
+🔶 G   45 ms I    5 ms T   40 ms S     69 kB R     61 kB The
+🔶 G   45 ms I   11 ms T   34 ms S     69 kB R     61 kB  little
+🔶 G   48 ms I    7 ms T   40 ms S     69 kB R     61 kB  girl
+🔶 G   47 ms I   11 ms T   36 ms S     69 kB R     61 kB  was
+🔶 G   46 ms I   11 ms T   35 ms S     69 kB R     61 kB  so
+🔶 G   48 ms I   10 ms T   38 ms S     69 kB R     61 kB  happy
+🔶 G   46 ms I   11 ms T   35 ms S     69 kB R     61 kB .
+🔶 G   49 ms I    6 ms T   43 ms S     69 kB R     61 kB  She
+🔶 G   52 ms I   14 ms T   38 ms S     69 kB R     61 kB  smiled
+🔶 G   50 ms I    7 ms T   42 ms S     69 kB R     61 kB  and
+🔶 G   49 ms I   10 ms T   39 ms S     69 kB R     61 kB  said
+🔶 G   46 ms I   10 ms T   36 ms S     69 kB R     61 kB ,
+🔶 G   47 ms I   10 ms T   37 ms S     69 kB R     61 kB  "
+🔶 G   46 ms I   14 ms T   31 ms S     69 kB R     61 kB Yes
+🔶 G   47 ms I    7 ms T   40 ms S     69 kB R     61 kB ,
+🔶 G   47 ms I    7 ms T   40 ms S     69 kB R     61 kB  I
+🔶 G   43 ms I    8 ms T   35 ms S     69 kB R     61 kB  will
+🔶 G   47 ms I    8 ms T   39 ms S     69 kB R     61 kB  help
+🔶 G   50 ms I   11 ms T   39 ms S     69 kB R     61 kB  you
+🔶 G   46 ms I    9 ms T   37 ms S     69 kB R     61 kB ."
+🔶 G   47 ms I    7 ms T   39 ms S     69 kB R     61 kB 
+
+🔶 G   45 ms I    9 ms T   36 ms S     69 kB R     61 kB So
+🔶 G   48 ms I    9 ms T   39 ms S     69 kB R     61 kB  the
+🔶 G   45 ms I   10 ms T   35 ms S     69 kB R     61 kB  fair
+🔶 G   48 ms I    7 ms T   40 ms S     69 kB R     61 kB y
+🔶 G   50 ms I   13 ms T   37 ms S     69 kB R     61 kB  and
+🔶 G   50 ms I    7 ms T   43 ms S     69 kB R     61 kB  the
+🔶 G   49 ms I    6 ms T   42 ms S     69 kB R     61 kB  little
+🔶 G   46 ms I    7 ms T   38 ms S     69 kB R     61 kB  girl
+🔶 G   47 ms I    9 ms T   38 ms S     69 kB R     61 kB  set
+🔶 G   48 ms I    9 ms T   38 ms S     69 kB R     61 kB  off
+🔶 G   45 ms I   12 ms T   33 ms S     69 kB R     61 kB  to
+🔶 G   47 ms I    9 ms T   37 ms S     69 kB R     61 kB  help
+🔶 G   45 ms I    9 ms T   36 ms S     69 kB R     61 kB  people
+🔶 G   40 ms I    7 ms T   32 ms S     69 kB R     61 kB .
+🔶 G   46 ms I    8 ms T   38 ms S     69 kB R     61 kB  They
+🔶 G   47 ms I    9 ms T   38 ms S     69 kB R     61 kB  used
+🔶 G   47 ms I   10 ms T   37 ms S     69 kB R     61 kB  the
+🔶 G   47 ms I   10 ms T   36 ms S     69 kB R     61 kB  gift
+🔶 G   48 ms I    6 ms T   41 ms S     69 kB R     61 kB  to
+🔶 G   50 ms I   12 ms T   38 ms S     69 kB R     61 kB  make
+🔶 G   48 ms I    5 ms T   43 ms S     69 kB R     61 kB  everyone
+🔶 G   48 ms I   10 ms T   38 ms S     69 kB R     61 kB  happy
+🔶 G   48 ms I    6 ms T   42 ms S     69 kB R     61 kB  and
+🔶 G   46 ms I    7 ms T   38 ms S     69 kB R     61 kB  they
+🔶 G   47 ms I   10 ms T   37 ms S     69 kB R     61 kB  even
+🔶 G   49 ms I    8 ms T   40 ms S     69 kB R     61 kB  used
+🔶 G   50 ms I    8 ms T   41 ms S     69 kB R     61 kB  it
+🔶 G   46 ms I    8 ms T   38 ms S     69 kB R     61 kB  to
+🔶 G   48 ms I    7 ms T   40 ms S     69 kB R     61 kB  help
+🔶 G   49 ms I    8 ms T   41 ms S     69 kB R     61 kB  other
+🔶 G   48 ms I    9 ms T   39 ms S     69 kB R     61 kB  people
+🔶 G   47 ms I    9 ms T   38 ms S     69 kB R     61 kB .
+🔶 G   46 ms I   10 ms T   36 ms S     69 kB R     61 kB 
+
+🔶 G   46 ms I   10 ms T   36 ms S     69 kB R     61 kB The
+🔶 G   47 ms I    9 ms T   38 ms S     69 kB R     61 kB  little
+🔶 G   49 ms I   10 ms T   38 ms S     69 kB R     61 kB  girl
+🔶 G   48 ms I    6 ms T   41 ms S     69 kB R     61 kB  was
+🔶 G   45 ms I   12 ms T   33 ms S     69 kB R     61 kB  so
+🔶 G   47 ms I   13 ms T   34 ms S     69 kB R     61 kB  happy
+🔶 G   47 ms I    9 ms T   38 ms S     69 kB R     61 kB  to
+🔶 G   53 ms I   15 ms T   37 ms S     69 kB R     61 kB  help
+🔶 G   52 ms I   17 ms T   35 ms S     69 kB R     61 kB  the
+🔶 G   50 ms I    7 ms T   43 ms S     69 kB R     61 kB  world
+🔶 G   56 ms I   13 ms T   42 ms S     69 kB R     61 kB  and
+🔶 G   51 ms I    9 ms T   41 ms S     69 kB R     61 kB  make
+🔶 G   51 ms I    9 ms T   41 ms S     69 kB R     61 kB  the
+🔶 G   47 ms I    9 ms T   37 ms S     69 kB R     61 kB  people
+🔶 G   47 ms I   13 ms T   34 ms S     69 kB R     61 kB  happy
+🔶 G   48 ms I    8 ms T   40 ms S     69 kB R     61 kB .
+🔶 G   51 ms I    9 ms T   42 ms S     69 kB R     61 kB  She
+🔶 G   52 ms I   10 ms T   41 ms S     69 kB R     61 kB  had
+🔶 G   47 ms I   13 ms T   34 ms S     69 kB R     61 kB  the
+🔶 G   48 ms I   12 ms T   36 ms S     69 kB R     61 kB  best
+🔶 G   51 ms I    9 ms T   41 ms S     69 kB R     61 kB  day
+🔶 G   48 ms I   11 ms T   37 ms S     69 kB R     61 kB  ever
+🔶 G   49 ms I   12 ms T   37 ms S     69 kB R     61 kB !
+
+Generated text:
+"Hello world"!
+The little girl was so excited. She ran around and around, until she was so dizzy she almost fell down.
+The little girl's mum said, "Why don't you take a rest?"
+The little girl nodded and laid down on the floor. She closed her eyes and took a deep breath.
+Suddenly, the little girl heard a voice. She opened her eyes and saw a small fairy.
+The fairy said, "Hello! I am the fairy of the world. I have come to give you a special gift."
+The little girl was so excited. She asked, "What is it?"
+The fairy said, "It is something you can use to help others. Do you want to help me?"
+The little girl was so happy. She smiled and said, "Yes, I will help you."
+So the fairy and the little girl set off to help people. They used the gift to make everyone happy and they even used it to help other people.
+The little girl was so happy to help the world and make the people happy. She had the best day ever!
+Avg detailed time[0]: 0.28 ms
+Avg detailed time[1]: 0.02 ms
+Avg detailed time[2]: 0.00 ms
+Avg detailed time[3]: 0.12 ms
+Avg detailed time[4]: 0.82 ms
+Avg detailed time[5]: 0.01 ms
+Avg detailed time[6]: 10.00 ms
+Avg detailed time[7]: 0.01 ms
+Avg detailed time[8]: 0.88 ms
+Avg detailed time[9]: 0.02 ms
+Avg detailed time[10]: 0.06 ms
+Avg detailed time[11]: 0.38 ms
+Avg detailed time[12]: 0.00 ms
+Avg detailed time[13]: 6.42 ms
+Avg detailed time[14]: 0.03 ms
+Avg detailed time[15]: 0.02 ms
+Avg detailed time[16]: 0.02 ms
+Avg detailed time[17]: 0.00 ms
+Avg detailed time[18]: 0.04 ms
+Avg detailed time[19]: 1.56 ms
+Avg detailed time[20]: 0.02 ms
+Avg detailed time[21]: 12.59 ms
+Avg detailed time[22]: 0.03 ms
+Avg detailed time[23]: 0.74 ms
+Avg detailed time[24]: 0.02 ms
+Avg detailed time[25]: 8.62 ms
+Avg detailed time[26]: 0.03 ms
+Avg detailed time[27]: 0.01 ms
+Avg detailed time[28]: 0.01 ms
+Avg detailed time[29]: 0.01 ms
+Avg detailed time[30]: 0.01 ms
+Avg detailed time[31]: 3.74 ms
+Generated Tokens:    245
+Avg Generation Time: 46.86 ms
+Avg Inference Time:  8.64 ms
+Avg Transfer Time:   37.87 ms
+Avg Serial Time:  5.08 ms
+Avg Parallel Time:  3.56 ms
+

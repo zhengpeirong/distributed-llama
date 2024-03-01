@@ -1,0 +1,15 @@
+Test 0
+Listening on 0.0.0.0:9998...
+Client connected
+💡 sliceIndex: 1
+💡 nSlices: 2
+⏩ Received 6324224 bytes for block 0 (93003 kB/s)
+⏩ Received 6324224 bytes for block 1 (117115 kB/s)
+⏩ Received 6324224 bytes for block 2 (117115 kB/s)
+⏩ Received 6324224 bytes for block 3 (119325 kB/s)
+⏩ Received 6324224 bytes for block 4 (117115 kB/s)
+⏩ Received 6324224 bytes for block 5 (117115 kB/s)
+⏩ Received 6324224 bytes for block 6 (117115 kB/s)
+⏩ Received 6324224 bytes for block 7 (119325 kB/s)
+Error receiving data: socket closed
+

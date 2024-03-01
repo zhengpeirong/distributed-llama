@@ -69,7 +69,7 @@ struct TransformerSpec {
     int nHeads;// num of Q heads
     int headSize;// embedding dim / num of heads
     int nKvHeads;// num of KV heads
-    int nExperts; 
+    int nExperts;
     int nActiveExperts;
     int seqLen;// kvcache长度
     int hiddenDim;// dim of FFN hidden layer
