@@ -44,6 +44,8 @@ public:
     ~TaskLoop();
     void run();
     static void* threadHandler(void* args);
+
+    unsigned int* detailedTime; // FIXME
 };
 
 #endif

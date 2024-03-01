@@ -44,18 +44,19 @@ TaskLoop::TaskLoop(unsigned int nThreads, unsigned int nTasks, unsigned int nTyp
     this->tasks = tasks;
     this->userData = userData;
     executionTime = new unsigned int[nTypes];
-
     threads = new TaskLoopThread[nThreads];
     for (unsigned int i = 0; i < nThreads; i++) {
         threads[i].threadIndex = i;
         threads[i].nTasks = nTasks;
         threads[i].loop = this;
     }
+    detailedTime = new unsigned int[nTasks];
 }
 
 TaskLoop::~TaskLoop() {
     delete[] executionTime;
     delete[] threads;
+    delete[] detailedTime;
 }
 
 void TaskLoop::run() {
@@ -67,7 +68,9 @@ void TaskLoop::run() {
     for (i = 0; i < nTypes; i++) {
         executionTime[i] = 0;
     }
-
+    for (i = 0; i < nTasks; i++) {
+        detailedTime[i] = 0;
+    }
     for (i = 1; i < nThreads; i++) {
         int result = pthread_create(&threads[i].handler, NULL, threadHandler, (void*)&threads[i]);
         if (result != 0) {
@@ -103,6 +106,9 @@ void* TaskLoop::threadHandler(void* arg) {
         if (currentCount == loop->nThreads - 1) {
             unsigned int currentTime = timeMs();
             loop->executionTime[task->taskType] += currentTime - loop->lastTime;
+            loop->detailedTime[currentTaskIndex % loop->nTasks] += currentTime - loop->lastTime; // 按照顺序计时
+            // printf("%1d",currentTaskIndex);
+            // printf("%2f",loop->detailedTime[currentTaskIndex]);
             loop->lastTime = currentTime;
 
             loop->doneThreadCount.store(0);

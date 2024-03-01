@@ -1,0 +1,4 @@
+source ~/llama-env/bin/activate
+cd distributed-llama/converter/
+nohup python convert-llama2.py ~/llama/llama-2-7b/ q40&
+ps aux | grep 'python convert-llama2.py'

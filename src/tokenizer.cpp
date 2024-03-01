@@ -355,3 +355,101 @@ int Sampler::sample(float* logits) {
     }
     return next;
 }
+
+
+void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPool, char* tokenizerPath, float temperature, float topp, int steps, char* prompt) {
+    unsigned long long rngSeed = (unsigned int)time(NULL);
+
+    Tokenizer tokenizer(tokenizerPath, spec->vocabSize);
+    Sampler sampler(spec->vocabSize, temperature, topp, rngSeed);
+
+    char emptyPrompt[] = "";
+    if (prompt == NULL) { prompt = emptyPrompt; }
+
+    // encode the (string) prompt into tokens sequence
+    int numPromptTokens = 0;
+    int* promptTokens = (int*)malloc((strlen(prompt)+3) * sizeof(int)); // +3 for '\0', ?BOS, ?EOS
+    tokenizer.encode(prompt, 1, 0, promptTokens, &numPromptTokens);
+    if (numPromptTokens < 1) {
+        fprintf(stderr, "something is wrong, expected at least 1 prompt token\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // start the main loop
+    long start = 0;  // used to time our code, only initialized after first iteration
+    int next;        // will store the next token in the sequence
+    int token = promptTokens[0]; // kick off with the first token in the prompt
+    int pos = 0;     // position in the sequence
+
+    unsigned long inferenceTime;
+    unsigned long transferTime;
+    unsigned int NUM_TASKS = 32;
+    unsigned long detailedTime[NUM_TASKS] = {0};
+    size_t sentBytes;
+    size_t recvBytes;
+    unsigned long totalGenerationTime = 0;
+    unsigned long totalInferenceTime = 0;
+    unsigned long totalTransferTime = 0;
+    unsigned long totalDetailedTime[NUM_TASKS] = {0};
+    while (pos < steps) {
+        unsigned long startTime = timeMs();
+        float* logits = inference->infer(token, pos);
+
+        // inference->getStats(&inferenceTime, &transferTime);
+        inference->getDetailedStats(&inferenceTime, &transferTime, detailedTime);
+
+        socketPool->getStats(&sentBytes, &recvBytes);
+
+        // advance the state machine
+        if (pos < numPromptTokens - 1) {
+            // if we are still processing the input prompt, force the next prompt token
+            next = promptTokens[pos + 1];
+        } else {
+            // otherwise sample the next token from the logits
+            next = sampler.sample(logits);
+        }
+        pos++;
+
+        unsigned long generationTime = timeMs() - startTime;
+
+        totalGenerationTime += generationTime;
+        totalInferenceTime += inferenceTime;
+        totalTransferTime += transferTime;
+
+        if (pos == 1) {
+            for (unsigned int i = 0; i < NUM_TASKS; i++) {
+                totalDetailedTime[i] = detailedTime[i];
+            }
+        } else {
+            for (unsigned int i = 0; i < NUM_TASKS; i++) {
+                totalDetailedTime[i] += detailedTime[i];
+            }
+        }
+
+        // data-dependent terminating condition: the BOS (=1) token delimits sequences
+        if (next == 1) { break; }
+
+        // print the token as string, decode it with the Tokenizer object
+        char* piece = tokenizer.decode(token, next);
+    
+        printf("🔶 G %4ld ms I %4ld ms T %4ld ms S %6ld kB R %6ld kB ", generationTime, inferenceTime, transferTime, sentBytes / 1024, recvBytes / 1024);
+        // for (unsigned int i = 0; i < NUM_TASKS; i++) {
+        //     printf("\ndetailedTime[%u]: %4ld ms", i, detailedTime[i]);
+        // }
+        safePrintf(piece); // same as printf("%s", piece), but skips "unsafe" bytes
+        printf("\n");
+        fflush(stdout);
+        token = next;
+    }
+
+    free(promptTokens);
+
+    printf("Generated tokens:    %d\n", pos);
+    printf("Avg generation time: %.2f ms\n", totalGenerationTime / (double)pos);
+    printf("Avg inference time:  %.2f ms\n", totalInferenceTime / (double)pos);
+    printf("Avg transfer time:   %.2f ms\n", totalTransferTime / (double)pos);
+
+    for (unsigned int i = 0; i < NUM_TASKS; i++) {
+    printf("Avg detailed time[%u]: %.2f ms\n", i, totalDetailedTime[i] / (double)pos);
+    }
+}
