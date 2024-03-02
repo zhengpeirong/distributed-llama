@@ -11,6 +11,13 @@
 #include "funcs.hpp"
 #include "utils.hpp"
 #include "tokenizer.hpp"
+#include <set>
+
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <chrono>
+#include <sstream>
 
 int compare_tokens(const void *a, const void *b) {
     return strcmp(((TokenIndex*)a)->str, ((TokenIndex*)b)->str);
@@ -455,12 +462,40 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
 
     free(promptTokens);
 
-    printf("Generated tokens:    %d\n", pos);
-    printf("Avg generation time: %.2f ms\n", totalGenerationTime / (double)pos);
-    printf("Avg inference time:  %.2f ms\n", totalInferenceTime / (double)pos);
-    printf("Avg transfer time:   %.2f ms\n", totalTransferTime / (double)pos);
-
+    unsigned long rootTime = 0;
     for (unsigned int i = 0; i < NUM_TASKS; i++) {
-    printf("Avg detailed time[%u]: %.2f ms\n", i, totalDetailedTime[i] / (double)pos);
+        printf("Avg detailed time[%u]: %.2f ms\n", i, totalDetailedTime[i] / (double)pos);
+        if (std::set<int>({0, 1, 2, 7, 8, 9, 14, 15, 16, 17, 26, 27, 29, 30, 31}).count(i)) {
+            rootTime += totalDetailedTime[i];
+        };
+    };
+
+    printf("Generated Tokens:    %d\n", pos);
+    printf("Avg Generation Time: %.2f ms\n", totalGenerationTime / (double)pos);
+    printf("Avg Inference Time:  %.2f ms\n", totalInferenceTime / (double)pos);
+    printf("Avg Transfer Time:   %.2f ms\n", totalTransferTime / (double)pos);
+    printf("Avg Addtional Time:  %.2f ms\n", rootTime / (double)pos);
+
+    // 保存输出内容
+    std::string folderPath = "./result/";
+
+    // 创建文件
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::tm* now = std::localtime(&currentTime);
+    std::ostringstream oss;
+    oss << std::put_time(now, "%Y-%m-%d_%H-%M-%S");
+    std::string csvFileName = folderPath + oss.str() + ".csv";
+    std::ofstream logfile(csvFileName);
+    // std::cout << csvFileName << std::endl;
+    // 写入文件
+    logfile << "Generated Tokens," << pos << std::endl;
+    logfile << "Avg Generation Time," << totalGenerationTime / static_cast<double>(pos) << std::endl;
+    logfile << "Avg Inference Time," << totalInferenceTime / static_cast<double>(pos) << std::endl;
+    logfile << "Avg Transfer Time," << totalTransferTime / static_cast<double>(pos) << std::endl;
+    logfile << "Avg Additional Time," << rootTime / static_cast<double>(pos) << std::endl;
+    logfile << "Task Index, Avg Detailed Time" << std::endl;
+    for (unsigned int i = 0; i < NUM_TASKS; i++) {
+        logfile << i << "," << totalDetailedTime[i] / static_cast<double>(pos) << std::endl;
     }
+    logfile.close();
 }
