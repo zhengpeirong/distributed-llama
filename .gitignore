@@ -12,3 +12,4 @@ main
 run.sh
 
 model/*
+.vscode/*
