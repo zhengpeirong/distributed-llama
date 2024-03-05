@@ -1,0 +1,7 @@
+Test,Avg generation time(ms),Avg inference time(ms),Avg transfer time(ms)
+Test 0,521.88,98.69,422.75
+Test 1,571.25,101.19,469.81
+Test 2,528.2,99.87,428.0
+Test 3,507.38,99.75,407.44
+Test 4,574.75,94.56,480.0
+Test Avg,540.692,98.812,441.6
