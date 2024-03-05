@@ -11,3 +11,5 @@ llama2-tasks-test
 grok1-tasks-test
 main
 run.sh
+
+model/*
