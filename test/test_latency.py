@@ -8,12 +8,19 @@ import subprocess as sp
 import pandas as pd
 from multiprocessing.pool import ThreadPool
 
-def execute(args,command):
+
+def save_log(stdout, log_name):
+    output = stdout.decode("utf8").strip()
+    with open(os.path.join(args.save_folder,log_name), 'a') as file:
+        file.write(output)
+        file.write("\n\n")
+
+def execute(args, command, is_warm_up=False):
     if len(args.works) != 0:
         pool = ThreadPool(len(args.works))
 
         for work_ip in args.works:
-            pool.apply_async(sshworker_execmd, args=(work_ip,))
+            pool.apply_async(sshworker_execmd, args=(work_ip, is_warm_up))
             # Prevent ssh execution from not finishing
             time.sleep(1)
         pool.close() 
@@ -42,8 +49,8 @@ def test(args):
     for _ in range(args.warm_up):
         print("Warm Up")
 
-        out = execute(args,command)
-        print(out.decode("utf8").split("\n")[-4:-1])
+        stdout = execute(args, command, True)
+        print(stdout.decode("utf8").split("\n")[-4:-1])
 
     generation_time = []
     inference_time = []
@@ -54,13 +61,16 @@ def test(args):
     for i in range(args.loop):
         print("Test {}".format(i))
 
-        out = execute(args,command)
-        output = out.decode("utf8").split("\n")[-4:-1]
-        print(output)
+        stdout = execute(args,command)
 
-        generation_time.append(float(re.findall(pattern, output[0])[0]))
-        inference_time.append(float(re.findall(pattern, output[1])[0]))
-        transfer_time.append(float(re.findall(pattern, output[2])[0]))
+        save_log(stdout,"master.log")
+
+        res = stdout.decode("utf8").split("\n")[-4:-1]
+        print(res)
+
+        generation_time.append(float(re.findall(pattern, res[0])[0]))
+        inference_time.append(float(re.findall(pattern, res[1])[0]))
+        transfer_time.append(float(re.findall(pattern, res[2])[0]))
         test_name.append("Test {}".format(i))
 
     generation_time.append(sum(generation_time) / len (generation_time))
@@ -71,23 +81,20 @@ def test(args):
     data = pd.DataFrame({"Test":test_name, "Avg generation time(ms)":generation_time, "Avg inference time(ms)":inference_time, "Avg transfer time(ms)":transfer_time,})
     data.to_csv(os.path.join(args.save_folder,'{}.csv'.format(args.test_name)),index=False,sep=',')
 
-def sshworker_execmd(server_ip): 
-    # print(server_ip)
-    # paramiko.util.log_to_file("paramiko_{}.log".format(server_ip))
+def sshworker_execmd(worker_ip, is_warm_up): 
+    # print(worker_ip)
+    # paramiko.util.log_to_file("paramiko_{}.log".format(worker_ip))
 
     s = paramiko.SSHClient() 
     s.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
-    s.connect(hostname=server_ip, port=22, username="root",password="123") 
+    s.connect(hostname=worker_ip, port=22, username="root", password="123") 
     
     command = "nice -n -20 /root/distributed-llama/main worker --port 9998 --nthreads 4"
     stdin, stdout, stderr = s.exec_command(command) 
-
     # print(stdout.read().decode("utf-8").strip())
-    output = stdout.read().decode("utf-8").strip()
 
-    with open(os.path.join(args.save_folder,"worker_{}.log".format(server_ip)), 'a') as file:
-        file.write(output)
-        file.write("\n\n")
+    if not is_warm_up:
+        save_log(stdout.read(), "worker_{}.log".format(worker_ip))
 
     s.close()
 
@@ -97,14 +104,14 @@ if __name__ == '__main__':
     # Nano5 192.168.6.5
 
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--test_name', type=str, default="1PC+3Nano",help="the name of test")
-    # parser.add_argument('--works', type=list, default=["192.168.6.1","192.168.6.2","192.168.6.5"],help="the ip of workers")
+    parser.add_argument('--test_name', type=str, default="1PC+3Nano", help="the name of test")
+    parser.add_argument('--works', type=list, default=["192.168.6.1","192.168.6.2","192.168.6.5"], help="the ip of workers")
 
-    # parser.add_argument('--test_name', type=str, default="1PC+1Nano",help="the name of test")
-    # parser.add_argument('--works', type=list, default=["192.168.6.1"],help="the ip of workers")
+    # parser.add_argument('--test_name', type=str, default="1PC+1Nano", help="the name of test")
+    # parser.add_argument('--works', type=list, default=["192.168.6.1"], help="the ip of workers")
 
-    parser.add_argument('--test_name', type=str, default="1PC",help="the name of test")
-    parser.add_argument('--works', type=list, default=[],help="the ip of workers")
+    # parser.add_argument('--test_name', type=str, default="1PC", help="the name of test")
+    # parser.add_argument('--works', type=list, default=[], help="the ip of workers")
 
     parser.add_argument('--model', type=str, default="dllama_llama-2-7b_q40",help="the model")
     parser.add_argument('--warm_up', type=int, default=2)
