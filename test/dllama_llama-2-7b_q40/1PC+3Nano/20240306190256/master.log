@@ -1,0 +1,313 @@
+Test 0
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  524 ms I   95 ms T  429 ms S 2670078 kB R    784 kB Hello
+🔶 G  514 ms I   96 ms T  418 ms S   2046 kB R    784 kB  world
+🔶 G  517 ms I   99 ms T  417 ms S   2046 kB R    784 kB <unk>
+🔶 G  523 ms I  106 ms T  417 ms S   2046 kB R    784 kB <unk>
+🔶 G  515 ms I   94 ms T  421 ms S   2046 kB R    784 kB <unk>
+🔶 G  510 ms I   91 ms T  419 ms S   2046 kB R    784 kB <unk>
+🔶 G  509 ms I   82 ms T  426 ms S   2046 kB R    784 kB <unk>
+🔶 G  512 ms I   93 ms T  419 ms S   2046 kB R    784 kB <unk>
+🔶 G  515 ms I   93 ms T  422 ms S   2046 kB R    784 kB <unk>
+🔶 G  515 ms I   93 ms T  421 ms S   2046 kB R    784 kB <unk>
+🔶 G  526 ms I  110 ms T  416 ms S   2046 kB R    784 kB <unk>
+🔶 G  526 ms I  106 ms T  419 ms S   2046 kB R    784 kB <unk>
+🔶 G  519 ms I  102 ms T  417 ms S   2046 kB R    784 kB <unk>
+🔶 G  510 ms I   96 ms T  414 ms S   2046 kB R    784 kB <unk>
+🔶 G  519 ms I   92 ms T  427 ms S   2046 kB R    784 kB <unk>
+🔶 G  525 ms I  104 ms T  421 ms S   2046 kB R    784 kB <unk>
+Generated tokens:    16
+Avg generation time: 517.44 ms
+Avg inference time:  97.00 ms
+Avg transfer time:   420.19 ms
+
+Test 1
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  595 ms I  109 ms T  486 ms S 2670078 kB R    784 kB Hello
+🔶 G  542 ms I   94 ms T  448 ms S   2046 kB R    784 kB  world
+🔶 G  538 ms I   94 ms T  443 ms S   2046 kB R    784 kB ,
+🔶 G  539 ms I   88 ms T  451 ms S   2046 kB R    784 kB  I
+🔶 G  543 ms I   91 ms T  452 ms S   2046 kB R    784 kB  am
+🔶 G  542 ms I  114 ms T  428 ms S   2046 kB R    784 kB  finally
+🔶 G  544 ms I   87 ms T  457 ms S   2046 kB R    784 kB  writing
+🔶 G  533 ms I   91 ms T  441 ms S   2046 kB R    784 kB  my
+🔶 G  544 ms I   96 ms T  448 ms S   2046 kB R    784 kB  first
+🔶 G  538 ms I   81 ms T  456 ms S   2046 kB R    784 kB  post
+🔶 G  545 ms I  103 ms T  442 ms S   2046 kB R    784 kB  on
+🔶 G  535 ms I   95 ms T  440 ms S   2046 kB R    784 kB  this
+🔶 G  534 ms I   96 ms T  438 ms S   2046 kB R    784 kB  new
+🔶 G  547 ms I  100 ms T  447 ms S   2046 kB R    784 kB  blog
+🔶 G  543 ms I   93 ms T  450 ms S   2046 kB R    784 kB ,
+🔶 G  539 ms I  102 ms T  437 ms S   2046 kB R    784 kB  which
+Generated tokens:    16
+Avg generation time: 543.81 ms
+Avg inference time:  95.88 ms
+Avg transfer time:   447.75 ms
+
+Test 2
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  560 ms I  100 ms T  460 ms S 2670078 kB R    784 kB Hello
+🔶 G  521 ms I   93 ms T  428 ms S   2046 kB R    784 kB  world
+🔶 G  526 ms I   99 ms T  427 ms S   2046 kB R    784 kB .
+🔶 G  564 ms I  101 ms T  462 ms S   2046 kB R    784 kB  prü
+🔶 G  532 ms I   99 ms T  433 ms S   2046 kB R    784 kB f
+🔶 G  532 ms I  105 ms T  427 ms S   2046 kB R    784 kB ung
+🔶 G  524 ms I   98 ms T  425 ms S   2046 kB R    784 kB 
+
+🔶 G  552 ms I  106 ms T  446 ms S   2046 kB R    784 kB A
+🔶 G  519 ms I   92 ms T  426 ms S   2046 kB R    784 kB pril
+🔶 G  526 ms I  106 ms T  420 ms S   2046 kB R    784 kB  
+🔶 G  531 ms I   93 ms T  438 ms S   2046 kB R    784 kB 2
+🔶 G  527 ms I   85 ms T  442 ms S   2046 kB R    784 kB 6
+🔶 G  526 ms I  102 ms T  424 ms S   2046 kB R    784 kB ,
+🔶 G  522 ms I   85 ms T  436 ms S   2046 kB R    784 kB  
+🔶 G  529 ms I   93 ms T  436 ms S   2046 kB R    784 kB 2
+🔶 G  537 ms I   96 ms T  441 ms S   2046 kB R    784 kB 0
+Generated tokens:    16
+Avg generation time: 533.00 ms
+Avg inference time:  97.06 ms
+Avg transfer time:   435.69 ms
+
+Test 3
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  558 ms I   87 ms T  471 ms S 2670078 kB R    784 kB Hello
+🔶 G  537 ms I  100 ms T  437 ms S   2046 kB R    784 kB  world
+🔶 G  538 ms I  103 ms T  435 ms S   2046 kB R    784 kB !
+🔶 G  545 ms I   90 ms T  455 ms S   2046 kB R    784 kB  It
+🔶 G  552 ms I   98 ms T  454 ms S   2046 kB R    784 kB '
+🔶 G  580 ms I   80 ms T  499 ms S   2046 kB R    784 kB s
+🔶 G  546 ms I  103 ms T  442 ms S   2046 kB R    784 kB  been
+🔶 G  543 ms I  101 ms T  442 ms S   2046 kB R    784 kB  a
+🔶 G  543 ms I   94 ms T  448 ms S   2046 kB R    784 kB while
+🔶 G  537 ms I   92 ms T  445 ms S   2046 kB R    784 kB !
+🔶 G  543 ms I  106 ms T  437 ms S   2046 kB R    784 kB 
+
+🔶 G  569 ms I   98 ms T  469 ms S   2046 kB R    784 kB  paździer
+🔶 G  543 ms I  106 ms T  436 ms S   2046 kB R    784 kB nica
+🔶 G  549 ms I   99 ms T  450 ms S   2046 kB R    784 kB  
+🔶 G  536 ms I   97 ms T  439 ms S   2046 kB R    784 kB 1
+🔶 G  544 ms I  106 ms T  437 ms S   2046 kB R    784 kB 1
+Generated tokens:    16
+Avg generation time: 547.69 ms
+Avg inference time:  97.50 ms
+Avg transfer time:   449.75 ms
+
+Test 4
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  588 ms I   97 ms T  491 ms S 2670078 kB R    784 kB Hello
+🔶 G  533 ms I  108 ms T  425 ms S   2046 kB R    784 kB  world
+🔶 G  523 ms I  101 ms T  422 ms S   2046 kB R    784 kB !
+🔶 G  517 ms I  102 ms T  415 ms S   2046 kB R    784 kB  I
+🔶 G  521 ms I   95 ms T  426 ms S   2046 kB R    784 kB ’
+🔶 G  524 ms I   95 ms T  428 ms S   2046 kB R    784 kB m
+🔶 G  524 ms I  101 ms T  423 ms S   2046 kB R    784 kB  your
+🔶 G  521 ms I  104 ms T  417 ms S   2046 kB R    784 kB  new
+🔶 G  528 ms I  117 ms T  410 ms S   2046 kB R    784 kB  Community
+🔶 G  525 ms I  117 ms T  408 ms S   2046 kB R    784 kB  Manager
+🔶 G  517 ms I  100 ms T  417 ms S   2046 kB R    784 kB .
+🔶 G  547 ms I   89 ms T  456 ms S   2046 kB R    784 kB чий
+🔶 G  532 ms I  101 ms T  430 ms S   2046 kB R    784 kB ,
+🔶 G  524 ms I  107 ms T  417 ms S   2046 kB R    784 kB  but
+🔶 G  522 ms I  108 ms T  414 ms S   2046 kB R    784 kB  I
+🔶 G  524 ms I   98 ms T  426 ms S   2046 kB R    784 kB ’
+Generated tokens:    16
+Avg generation time: 529.38 ms
+Avg inference time:  102.50 ms
+Avg transfer time:   426.56 ms
+
+Test 5
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  526 ms I   95 ms T  431 ms S 2670078 kB R    784 kB Hello
+🔶 G  507 ms I   87 ms T  420 ms S   2046 kB R    784 kB  world
+🔶 G  511 ms I   96 ms T  415 ms S   2046 kB R    784 kB <unk>
+🔶 G  518 ms I   95 ms T  423 ms S   2046 kB R    784 kB <unk>
+🔶 G  512 ms I   89 ms T  423 ms S   2046 kB R    784 kB <unk>
+🔶 G  509 ms I   94 ms T  415 ms S   2046 kB R    784 kB <unk>
+🔶 G  514 ms I   91 ms T  423 ms S   2046 kB R    784 kB <unk>
+🔶 G  519 ms I  111 ms T  408 ms S   2046 kB R    784 kB <unk>
+🔶 G  532 ms I  125 ms T  405 ms S   2046 kB R    784 kB <unk>
+🔶 G  510 ms I   94 ms T  416 ms S   2046 kB R    784 kB <unk>
+🔶 G  514 ms I   91 ms T  423 ms S   2046 kB R    784 kB <unk>
+🔶 G  518 ms I   97 ms T  421 ms S   2046 kB R    784 kB <unk>
+🔶 G  516 ms I  106 ms T  410 ms S   2046 kB R    784 kB <unk>
+🔶 G  518 ms I  102 ms T  416 ms S   2046 kB R    784 kB <unk>
+🔶 G  518 ms I  100 ms T  418 ms S   2046 kB R    784 kB <unk>
+🔶 G  517 ms I  101 ms T  416 ms S   2046 kB R    784 kB <unk>
+Generated tokens:    16
+Avg generation time: 516.19 ms
+Avg inference time:  98.38 ms
+Avg transfer time:   417.69 ms
+
+Test 6
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  553 ms I   88 ms T  465 ms S 2670078 kB R    784 kB Hello
+🔶 G  561 ms I   96 ms T  465 ms S   2046 kB R    784 kB  world
+🔶 G  579 ms I   95 ms T  484 ms S   2046 kB R    784 kB ,
+🔶 G  575 ms I  106 ms T  469 ms S   2046 kB R    784 kB  we
+🔶 G  574 ms I   97 ms T  477 ms S   2046 kB R    784 kB ’
+🔶 G  560 ms I   95 ms T  465 ms S   2046 kB R    784 kB re
+🔶 G  598 ms I  105 ms T  493 ms S   2046 kB R    784 kB  back
+🔶 G  613 ms I  101 ms T  512 ms S   2046 kB R    784 kB .
+🔶 G  570 ms I  100 ms T  468 ms S   2046 kB R    784 kB  Unterscheidung
+🔶 G  566 ms I   97 ms T  469 ms S   2046 kB R    784 kB  Between
+🔶 G  567 ms I   86 ms T  481 ms S   2046 kB R    784 kB  Report
+🔶 G  565 ms I   99 ms T  465 ms S   2046 kB R    784 kB  Writing
+🔶 G  570 ms I   88 ms T  481 ms S   2046 kB R    784 kB  And
+🔶 G  566 ms I   98 ms T  467 ms S   2046 kB R    784 kB  Ess
+🔶 G  566 ms I  105 ms T  460 ms S   2046 kB R    784 kB ay
+🔶 G  570 ms I  105 ms T  465 ms S   2046 kB R    784 kB  Writing
+Generated tokens:    16
+Avg generation time: 572.06 ms
+Avg inference time:  97.56 ms
+Avg transfer time:   474.12 ms
+
+Test 7
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  571 ms I   85 ms T  486 ms S 2670078 kB R    784 kB Hello
+🔶 G  522 ms I   88 ms T  434 ms S   2046 kB R    784 kB  world
+🔶 G  524 ms I  103 ms T  421 ms S   2046 kB R    784 kB .
+🔶 G  551 ms I   91 ms T  458 ms S   2046 kB R    784 kB  травня
+🔶 G  517 ms I   86 ms T  431 ms S   2046 kB R    784 kB  
+🔶 G  525 ms I  108 ms T  417 ms S   2046 kB R    784 kB 2
+🔶 G  528 ms I   93 ms T  435 ms S   2046 kB R    784 kB 3
+🔶 G  518 ms I  103 ms T  415 ms S   2046 kB R    784 kB ,
+🔶 G  528 ms I  101 ms T  427 ms S   2046 kB R    784 kB  
+🔶 G  560 ms I   99 ms T  461 ms S   2046 kB R    784 kB 2
+🔶 G  531 ms I   93 ms T  438 ms S   2046 kB R    784 kB 0
+🔶 G  523 ms I   90 ms T  433 ms S   2046 kB R    784 kB 1
+🔶 G  516 ms I   88 ms T  428 ms S   2046 kB R    784 kB 5
+🔶 G  518 ms I   99 ms T  419 ms S   2046 kB R    784 kB  at
+🔶 G  515 ms I   87 ms T  428 ms S   2046 kB R    784 kB  
+🔶 G  520 ms I   94 ms T  426 ms S   2046 kB R    784 kB 1
+Generated tokens:    16
+Avg generation time: 529.19 ms
+Avg inference time:  94.25 ms
+Avg transfer time:   434.81 ms
+
+Test 8
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  558 ms I  110 ms T  448 ms S 2670078 kB R    784 kB Hello
+🔶 G  521 ms I  100 ms T  421 ms S   2046 kB R    784 kB  world
+🔶 G  524 ms I   97 ms T  426 ms S   2046 kB R    784 kB .
+🔶 G  552 ms I   97 ms T  453 ms S   2046 kB R    784 kB  kwiet
+🔶 G  528 ms I  112 ms T  416 ms S   2046 kB R    784 kB nik
+🔶 G  529 ms I  103 ms T  426 ms S   2046 kB R    784 kB  
+🔶 G  530 ms I  109 ms T  421 ms S   2046 kB R    784 kB 2
+🔶 G  543 ms I  119 ms T  424 ms S   2046 kB R    784 kB 0
+🔶 G  523 ms I   99 ms T  424 ms S   2046 kB R    784 kB ,
+🔶 G  523 ms I  108 ms T  414 ms S   2046 kB R    784 kB  
+🔶 G  524 ms I   99 ms T  424 ms S   2046 kB R    784 kB 2
+🔶 G  541 ms I  108 ms T  433 ms S   2046 kB R    784 kB 0
+🔶 G  523 ms I  110 ms T  413 ms S   2046 kB R    784 kB 1
+🔶 G  523 ms I   98 ms T  425 ms S   2046 kB R    784 kB 5
+🔶 G  522 ms I  108 ms T  413 ms S   2046 kB R    784 kB 
+
+🔶 G  524 ms I  103 ms T  421 ms S   2046 kB R    784 kB m
+Generated tokens:    16
+Avg generation time: 530.50 ms
+Avg inference time:  105.00 ms
+Avg transfer time:   425.12 ms
+
+Test 9
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 4
+⏩ Loaded 4242882560 bytes
+🔶 G  604 ms I   98 ms T  506 ms S 2670078 kB R    784 kB Hello
+🔶 G  573 ms I   96 ms T  477 ms S   2046 kB R    784 kB  world
+🔶 G  571 ms I  106 ms T  465 ms S   2046 kB R    784 kB ,
+🔶 G  562 ms I   92 ms T  470 ms S   2046 kB R    784 kB  I
+🔶 G  571 ms I  100 ms T  470 ms S   2046 kB R    784 kB  am
+🔶 G  570 ms I  105 ms T  465 ms S   2046 kB R    784 kB  a
+🔶 G  574 ms I   94 ms T  479 ms S   2046 kB R    784 kB  woman
+🔶 G  606 ms I  109 ms T  497 ms S   2046 kB R    784 kB ,
+🔶 G  572 ms I  117 ms T  455 ms S   2046 kB R    784 kB  a
+🔶 G  581 ms I   89 ms T  492 ms S   2046 kB R    784 kB  writer
+🔶 G  571 ms I   98 ms T  472 ms S   2046 kB R    784 kB ,
+🔶 G  577 ms I  106 ms T  471 ms S   2046 kB R    784 kB  a
+🔶 G  582 ms I   98 ms T  484 ms S   2046 kB R    784 kB  reader
+🔶 G  570 ms I   89 ms T  481 ms S   2046 kB R    784 kB ,
+🔶 G  566 ms I   94 ms T  472 ms S   2046 kB R    784 kB  and
+🔶 G  575 ms I  108 ms T  467 ms S   2046 kB R    784 kB  I
+Generated tokens:    16
+Avg generation time: 576.56 ms
+Avg inference time:  99.94 ms
+Avg transfer time:   476.44 ms
+

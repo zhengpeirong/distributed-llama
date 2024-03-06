@@ -3,26 +3,27 @@ import re
 import argparse
 import paramiko
 import time
-import shutil
 import subprocess as sp
 import pandas as pd
 from multiprocessing.pool import ThreadPool
+from datetime import datetime
 
 
-def save_log(stdout, log_name):
+def save_log(stdout, log_name, test_id):
     output = stdout.decode("utf8").strip()
     with open(os.path.join(args.save_folder,log_name), 'a') as file:
+        file.write("Test {}\n".format(test_id))
         file.write(output)
         file.write("\n\n")
 
-def execute(args, command, is_warm_up=False):
+def execute(args, command, test_id=-1):
     if len(args.works) != 0:
         pool = ThreadPool(len(args.works))
 
         for work_ip in args.works:
-            pool.apply_async(sshworker_execmd, args=(work_ip, is_warm_up))
+            pool.apply_async(ssh_worker_execmd, args=(work_ip, test_id))
             # Prevent ssh execution from not finishing
-            time.sleep(1)
+            time.sleep(5)
         pool.close() 
 
     pipe = sp.Popen(command, stdout= sp.PIPE)
@@ -34,12 +35,10 @@ def execute(args, command, is_warm_up=False):
     return out
 
 def test(args):
-    command = [
-        "nice", "-n", "-20", "/root/WorkSpace/distributed-llama/main", "inference", 
-        "--model", "/root/WorkSpace/distributed-llama/model/{}.bin".format(args.model), "--tokenizer", "/root/WorkSpace/distributed-llama/model/tokenizer.bin",
-        "--weights-float-type", "q40", "--buffer-float-type", "q80", 
-        "--prompt", "Hello world", "--steps", "16", "--nthreads", "4",
-            ]
+    command = ["nice", "-n", "-20", "/root/WorkSpace/distributed-llama/main", "inference", 
+            "--model", "/root/WorkSpace/distributed-llama/model/{}.bin".format(args.model), "--tokenizer", "/root/WorkSpace/distributed-llama/model/tokenizer.bin",
+            "--weights-float-type", "q40", "--buffer-float-type", "q80", 
+            "--prompt", "Hello world", "--steps", "16", "--nthreads", "4"]
     
     if len(args.works) != 0:
         command.append("--workers")
@@ -49,7 +48,7 @@ def test(args):
     for _ in range(args.warm_up):
         print("Warm Up")
 
-        stdout = execute(args, command, True)
+        stdout = execute(args, command)
         print(stdout.decode("utf8").split("\n")[-4:-1])
 
     generation_time = []
@@ -61,9 +60,10 @@ def test(args):
     for i in range(args.loop):
         print("Test {}".format(i))
 
-        stdout = execute(args,command)
+        stdout = execute(args, command, i)
 
-        save_log(stdout,"master.log")
+        # save master log
+        save_log(stdout, "master.log", i)
 
         res = stdout.decode("utf8").split("\n")[-4:-1]
         print(res)
@@ -81,9 +81,7 @@ def test(args):
     data = pd.DataFrame({"Test":test_name, "Avg generation time(ms)":generation_time, "Avg inference time(ms)":inference_time, "Avg transfer time(ms)":transfer_time,})
     data.to_csv(os.path.join(args.save_folder,'{}.csv'.format(args.test_name)),index=False,sep=',')
 
-def sshworker_execmd(worker_ip, is_warm_up): 
-    # print(worker_ip)
-    # paramiko.util.log_to_file("paramiko_{}.log".format(worker_ip))
+def ssh_worker_execmd(worker_ip, test_id): 
 
     s = paramiko.SSHClient() 
     s.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
@@ -93,36 +91,44 @@ def sshworker_execmd(worker_ip, is_warm_up):
     stdin, stdout, stderr = s.exec_command(command) 
     # print(stdout.read().decode("utf-8").strip())
 
-    if not is_warm_up:
-        save_log(stdout.read(), "worker_{}.log".format(worker_ip))
+    if test_id != -1:
+        save_log(stdout.read(), "worker_{}.log".format(worker_ip), test_id)
 
     s.close()
 
 if __name__ == '__main__':
     # Nano1 192.168.6.1
     # Nano2 192.168.6.2
+    # Nano4 192.168.6.4
     # Nano5 192.168.6.5
+    # Nano7 192.168.6.7
+    # Nano8 192.168.6.8
+    # Nano10 192.168.6.10
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--test_name', type=str, default="1PC+3Nano", help="the name of test")
-    parser.add_argument('--works', type=list, default=["192.168.6.1","192.168.6.2","192.168.6.5"], help="the ip of workers")
+
+    # parser.add_argument('--test_name', type=str, default="1PC+7Nano", help="the name of test")
+    # parser.add_argument('--works', type=list, default=["192.168.6.1","192.168.6.2","192.168.6.4","192.168.6.5", "192.168.6.7", "192.168.6.8","192.168.6.10"], help="the ip of workers")
+
+    # parser.add_argument('--test_name', type=str, default="1PC+3Nano", help="the name of test")
+    # parser.add_argument('--works', type=list, default=["192.168.6.1","192.168.6.7","192.168.6.8"], help="the ip of workers")
 
     # parser.add_argument('--test_name', type=str, default="1PC+1Nano", help="the name of test")
     # parser.add_argument('--works', type=list, default=["192.168.6.1"], help="the ip of workers")
 
-    # parser.add_argument('--test_name', type=str, default="1PC", help="the name of test")
-    # parser.add_argument('--works', type=list, default=[], help="the ip of workers")
+    parser.add_argument('--test_name', type=str, default="1PC", help="the name of test")
+    parser.add_argument('--works', type=list, default=[], help="the ip of workers")
 
     parser.add_argument('--model', type=str, default="dllama_llama-2-7b_q40",help="the model")
     parser.add_argument('--warm_up', type=int, default=2)
-    parser.add_argument('--loop', type=int, default=5)
+    parser.add_argument('--loop', type=int, default=10)
 
     args = parser.parse_args()
 
-    save_folder = os.path.join("/root/WorkSpace/distributed-llama/test", args.model, args.test_name)
-    args.save_folder = save_folder
-    if os.path.exists(save_folder):
-        shutil.rmtree(save_folder)
+    currentDateAndTime = datetime.now()
+    save_folder = os.path.join("/root/WorkSpace/distributed-llama/test", args.model, args.test_name,currentDateAndTime.strftime("%Y%m%d%H%M%S"))
     os.makedirs(save_folder)
+    args.save_folder = save_folder
+
 
     test(args)
