@@ -21,7 +21,7 @@ def execute(args, command, test_id=-1):
         pool = ThreadPool(len(args.works))
 
         for work_ip in args.works:
-            pool.apply_async(ssh_worker_execmd, args=(work_ip, test_id))
+            pool.apply_async(ssh_worker_execmd, args=(args, work_ip, test_id))
             # Prevent ssh execution from not finishing
             time.sleep(5)
         pool.close() 
@@ -38,7 +38,7 @@ def test(args):
     command = ["nice", "-n", "-20", "/root/WorkSpace/distributed-llama/main", "inference", 
             "--model", "/root/WorkSpace/distributed-llama/model/{}.bin".format(args.model), "--tokenizer", "/root/WorkSpace/distributed-llama/model/tokenizer.bin",
             "--weights-float-type", "q40", "--buffer-float-type", "q80", 
-            "--prompt", "Hello world", "--steps", "16", "--nthreads", "4"]
+            "--prompt", "Hello world", "--steps", "16", "--nthreads", "{}".format(args.thread)]
     
     if len(args.works) != 0:
         command.append("--workers")
@@ -81,13 +81,13 @@ def test(args):
     data = pd.DataFrame({"Test":test_name, "Avg generation time(ms)":generation_time, "Avg inference time(ms)":inference_time, "Avg transfer time(ms)":transfer_time,})
     data.to_csv(os.path.join(args.save_folder,'{}.csv'.format(args.test_name)),index=False,sep=',')
 
-def ssh_worker_execmd(worker_ip, test_id): 
+def ssh_worker_execmd(args, worker_ip, test_id): 
 
     s = paramiko.SSHClient() 
     s.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
     s.connect(hostname=worker_ip, port=22, username="root", password="123") 
     
-    command = "nice -n -20 /root/distributed-llama/main worker --port 9998 --nthreads 4"
+    command = "nice -n -20 /root/distributed-llama/main worker --port 9998 --nthreads {}".format(args.thread)
     stdin, stdout, stderr = s.exec_command(command) 
     # print(stdout.read().decode("utf-8").strip())
 
@@ -116,8 +116,9 @@ if __name__ == '__main__':
     # parser.add_argument('--test_name', type=str, default="1PC+1Nano", help="the name of test")
     # parser.add_argument('--works', type=list, default=["192.168.6.1"], help="the ip of workers")
 
-    parser.add_argument('--test_name', type=str, default="1PC", help="the name of test")
+    parser.add_argument('--test_name', type=str, default="1PC_8threads", help="the name of test")
     parser.add_argument('--works', type=list, default=[], help="the ip of workers")
+    parser.add_argument('--thread', type=int, default=8, help="num of threads")
 
     parser.add_argument('--model', type=str, default="dllama_llama-2-7b_q40",help="the model")
     parser.add_argument('--warm_up', type=int, default=2)
