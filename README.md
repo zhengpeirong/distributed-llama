@@ -148,11 +148,15 @@ sudo nice -n -20 ./main inference --model ../dllama_llama-2-7b_q40.bin --tokeniz
 ```
 12. 用q40的llama
 ```sh
-sudo nice -n -20 ./main inference --model ./dllama_7b_q40.bin --tokenizer ./tokenizer.bin --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 16 --nthreads 4 --workers 192.168.1.11:9998 192.168.1.12:9998 192.168.1.13:9998
+sudo nice -n -20 ./main inference --model ./dllama_7b_q40.bin --tokenizer ./tokenizer.bin --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 64 --nthreads 4 --workers 192.168.1.11:9998 192.168.1.12:9998 192.168.1.13:9998
 ```
 13. 单独主节点
 ```sh
-sudo nice -n -20 ./main inference --model ./dllama_7b_q40.bin --tokenizer ./tokenizer.bin --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 16 --nthreads 4
+sudo nice -n -20 ./main inference --model ./dllama_7b_q40.bin --tokenizer ./tokenizer.bin --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 64 --nthreads 4
+```
+14. 用小模型测试
+```sh
+sudo nice -n -20 ./main inference --model ./dllama_stories42M.bin --tokenizer ./tokenizer.bin --weights-float-type f32 --buffer-float-type f32 --prompt "Hello world" --steps 64 --nthreads 4
 ```
 To add more worker nodes, just add more addresses to the `--workers` argument.
 
