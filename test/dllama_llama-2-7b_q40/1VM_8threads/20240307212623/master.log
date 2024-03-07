@@ -1,0 +1,314 @@
+Test 0
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  174 ms I  173 ms T    0 ms S      0 kB R      0 kB Hello
+🔶 G  173 ms I  173 ms T    0 ms S      0 kB R      0 kB  world
+🔶 G  172 ms I  172 ms T    0 ms S      0 kB R      0 kB ,
+🔶 G  171 ms I  170 ms T    0 ms S      0 kB R      0 kB  it
+🔶 G  175 ms I  174 ms T    1 ms S      0 kB R      0 kB '
+🔶 G  174 ms I  173 ms T    1 ms S      0 kB R      0 kB s
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  been
+🔶 G  175 ms I  174 ms T    0 ms S      0 kB R      0 kB  a
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  long
+🔶 G  177 ms I  176 ms T    0 ms S      0 kB R      0 kB  time
+🔶 G  174 ms I  173 ms T    1 ms S      0 kB R      0 kB 
+
+🔶 G  182 ms I  180 ms T    0 ms S      0 kB R      0 kB ☉
+🔶 G  178 ms I  178 ms T    0 ms S      0 kB R      0 kB  
+🔶 G  190 ms I  190 ms T    0 ms S      0 kB R      0 kB ☉
+🔶 G  178 ms I  177 ms T    0 ms S      0 kB R      0 kB  
+🔶 G  178 ms I  178 ms T    0 ms S      0 kB R      0 kB 
+Generated tokens:    16
+Avg generation time: 176.31 ms
+Avg inference time:  175.69 ms
+Avg transfer time:   0.19 ms
+
+Test 1
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB Hello
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB  world
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB ,
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  as
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  I
+🔶 G  176 ms I  175 ms T    0 ms S      0 kB R      0 kB  write
+🔶 G  171 ms I  170 ms T    0 ms S      0 kB R      0 kB  this
+🔶 G  175 ms I  174 ms T    0 ms S      0 kB R      0 kB  I
+🔶 G  172 ms I  172 ms T    0 ms S      0 kB R      0 kB ’
+🔶 G  180 ms I  179 ms T    1 ms S      0 kB R      0 kB m
+🔶 G  179 ms I  178 ms T    0 ms S      0 kB R      0 kB  sitting
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB  in
+🔶 G  176 ms I  175 ms T    0 ms S      0 kB R      0 kB  my
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  hotel
+🔶 G  177 ms I  176 ms T    1 ms S      0 kB R      0 kB  room
+🔶 G  178 ms I  177 ms T    0 ms S      0 kB R      0 kB  in
+Generated tokens:    16
+Avg generation time: 175.44 ms
+Avg inference time:  174.94 ms
+Avg transfer time:   0.12 ms
+
+Test 2
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  170 ms I  170 ms T    0 ms S      0 kB R      0 kB Hello
+🔶 G  182 ms I  182 ms T    0 ms S      0 kB R      0 kB  world
+🔶 G  184 ms I  184 ms T    0 ms S      0 kB R      0 kB !
+🔶 G  173 ms I  173 ms T    0 ms S      0 kB R      0 kB  I
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB  have
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB  no
+🔶 G  182 ms I  181 ms T    0 ms S      0 kB R      0 kB  idea
+🔶 G  180 ms I  180 ms T    0 ms S      0 kB R      0 kB  what
+🔶 G  176 ms I  175 ms T    1 ms S      0 kB R      0 kB  to
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB  write
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB ,
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB  so
+🔶 G  182 ms I  180 ms T    1 ms S      0 kB R      0 kB  I
+🔶 G  180 ms I  180 ms T    0 ms S      0 kB R      0 kB '
+🔶 G  178 ms I  177 ms T    0 ms S      0 kB R      0 kB ll
+🔶 G  177 ms I  176 ms T    0 ms S      0 kB R      0 kB  just
+Generated tokens:    16
+Avg generation time: 177.81 ms
+Avg inference time:  177.44 ms
+Avg transfer time:   0.12 ms
+
+Test 3
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB Hello
+🔶 G  173 ms I  173 ms T    0 ms S      0 kB R      0 kB  world
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB !
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB  Welcome
+🔶 G  183 ms I  183 ms T    0 ms S      0 kB R      0 kB  to
+🔶 G  178 ms I  177 ms T    0 ms S      0 kB R      0 kB  the
+🔶 G  171 ms I  170 ms T    0 ms S      0 kB R      0 kB  first
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  post
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB  of
+🔶 G  182 ms I  181 ms T    0 ms S      0 kB R      0 kB  the
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB  blog
+🔶 G  178 ms I  178 ms T    0 ms S      0 kB R      0 kB .
+🔶 G  177 ms I  175 ms T    0 ms S      0 kB R      0 kB  kommt
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB  noch
+🔶 G  177 ms I  176 ms T    0 ms S      0 kB R      0 kB !
+🔶 G  187 ms I  186 ms T    0 ms S      0 kB R      0 kB 
+</s>
+
+Generated tokens:    16
+Avg generation time: 177.12 ms
+Avg inference time:  176.69 ms
+Avg transfer time:   0.00 ms
+
+Test 4
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB Hello
+🔶 G  173 ms I  173 ms T    0 ms S      0 kB R      0 kB  world
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB !
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB  It
+🔶 G  175 ms I  174 ms T    1 ms S      0 kB R      0 kB ’
+🔶 G  175 ms I  174 ms T    0 ms S      0 kB R      0 kB s
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  been
+🔶 G  185 ms I  184 ms T    0 ms S      0 kB R      0 kB  a
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB  while
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB .
+🔶 G  179 ms I  175 ms T    2 ms S      0 kB R      0 kB bolds
+🔶 G  175 ms I  174 ms T    0 ms S      0 kB R      0 kB  The
+🔶 G  179 ms I  179 ms T    0 ms S      0 kB R      0 kB  last
+🔶 G  178 ms I  178 ms T    0 ms S      0 kB R      0 kB  time
+🔶 G  179 ms I  178 ms T    1 ms S      0 kB R      0 kB  I
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB  wrote
+Generated tokens:    16
+Avg generation time: 176.75 ms
+Avg inference time:  176.19 ms
+Avg transfer time:   0.25 ms
+
+Test 5
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  178 ms I  178 ms T    0 ms S      0 kB R      0 kB Hello
+🔶 G  193 ms I  193 ms T    0 ms S      0 kB R      0 kB  world
+🔶 G  172 ms I  172 ms T    0 ms S      0 kB R      0 kB !
+🔶 G  180 ms I  180 ms T    0 ms S      0 kB R      0 kB  This
+🔶 G  183 ms I  183 ms T    0 ms S      0 kB R      0 kB  is
+🔶 G  186 ms I  185 ms T    0 ms S      0 kB R      0 kB  our
+🔶 G  184 ms I  184 ms T    0 ms S      0 kB R      0 kB  second
+🔶 G  182 ms I  182 ms T    0 ms S      0 kB R      0 kB  post
+🔶 G  184 ms I  184 ms T    0 ms S      0 kB R      0 kB  to
+🔶 G  185 ms I  184 ms T    1 ms S      0 kB R      0 kB  introduce
+🔶 G  185 ms I  185 ms T    0 ms S      0 kB R      0 kB  our
+🔶 G  185 ms I  185 ms T    0 ms S      0 kB R      0 kB  new
+🔶 G  185 ms I  185 ms T    0 ms S      0 kB R      0 kB est
+🔶 G  185 ms I  184 ms T    1 ms S      0 kB R      0 kB  series
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB ,
+🔶 G  179 ms I  178 ms T    0 ms S      0 kB R      0 kB  “
+Generated tokens:    16
+Avg generation time: 182.62 ms
+Avg inference time:  182.38 ms
+Avg transfer time:   0.12 ms
+
+Test 6
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  170 ms I  169 ms T    0 ms S      0 kB R      0 kB Hello
+🔶 G  196 ms I  194 ms T    1 ms S      0 kB R      0 kB  world
+🔶 G  178 ms I  178 ms T    0 ms S      0 kB R      0 kB !
+🔶 G  194 ms I  194 ms T    0 ms S      0 kB R      0 kB  My
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB  name
+🔶 G  194 ms I  193 ms T    0 ms S      0 kB R      0 kB  is
+🔶 G  182 ms I  181 ms T    1 ms S      0 kB R      0 kB  Reb
+🔶 G  194 ms I  194 ms T    0 ms S      0 kB R      0 kB e
+🔶 G  194 ms I  194 ms T    0 ms S      0 kB R      0 kB cca
+🔶 G  176 ms I  175 ms T    1 ms S      0 kB R      0 kB  and
+🔶 G  176 ms I  175 ms T    0 ms S      0 kB R      0 kB  I
+🔶 G  194 ms I  194 ms T    0 ms S      0 kB R      0 kB  am
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB  a
+🔶 G  194 ms I  194 ms T    0 ms S      0 kB R      0 kB  mom
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB my
+🔶 G  195 ms I  195 ms T    0 ms S      0 kB R      0 kB .
+Generated tokens:    16
+Avg generation time: 185.31 ms
+Avg inference time:  184.88 ms
+Avg transfer time:   0.19 ms
+
+Test 7
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  174 ms I  173 ms T    1 ms S      0 kB R      0 kB Hello
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB  world
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB .
+🔶 G  177 ms I  175 ms T    0 ms S      0 kB R      0 kB  Unterscheidung
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB .
+🔶 G  178 ms I  178 ms T    0 ms S      0 kB R      0 kB  Some
+🔶 G  177 ms I  176 ms T    0 ms S      0 kB R      0 kB one
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB '
+🔶 G  175 ms I  174 ms T    1 ms S      0 kB R      0 kB s
+🔶 G  180 ms I  180 ms T    0 ms S      0 kB R      0 kB  in
+🔶 G  183 ms I  182 ms T    0 ms S      0 kB R      0 kB  trouble
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB .
+🔶 G  177 ms I  176 ms T    0 ms S      0 kB R      0 kB 
+
+🔶 G  176 ms I  174 ms T    2 ms S      0 kB R      0 kB A
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB  new
+🔶 G  177 ms I  177 ms T    0 ms S      0 kB R      0 kB  year
+Generated tokens:    16
+Avg generation time: 176.69 ms
+Avg inference time:  176.12 ms
+Avg transfer time:   0.25 ms
+
+Test 8
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB Hello
+🔶 G  179 ms I  178 ms T    0 ms S      0 kB R      0 kB  world
+🔶 G  179 ms I  178 ms T    1 ms S      0 kB R      0 kB !
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  It
+🔶 G  177 ms I  176 ms T    0 ms S      0 kB R      0 kB '
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB s
+🔶 G  178 ms I  177 ms T    0 ms S      0 kB R      0 kB  been
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  a
+🔶 G  176 ms I  175 ms T    0 ms S      0 kB R      0 kB  long
+🔶 G  175 ms I  175 ms T    0 ms S      0 kB R      0 kB  while
+🔶 G  179 ms I  178 ms T    0 ms S      0 kB R      0 kB  since
+🔶 G  175 ms I  173 ms T    2 ms S      0 kB R      0 kB  I
+🔶 G  182 ms I  182 ms T    0 ms S      0 kB R      0 kB  last
+🔶 G  177 ms I  176 ms T    0 ms S      0 kB R      0 kB  posted
+🔶 G  184 ms I  184 ms T    0 ms S      0 kB R      0 kB  an
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB  update
+Generated tokens:    16
+Avg generation time: 177.25 ms
+Avg inference time:  176.69 ms
+Avg transfer time:   0.19 ms
+
+Test 9
+💡 dim: 4096
+💡 hiddenDim: 11008
+💡 nLayers: 32
+💡 nHeads: 32
+💡 nKvHeads: 32
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 1
+⏩ Loaded 4242882560 bytes
+🔶 G  178 ms I  178 ms T    0 ms S      0 kB R      0 kB Hello
+🔶 G  174 ms I  174 ms T    0 ms S      0 kB R      0 kB  world
+🔶 G  175 ms I  174 ms T    0 ms S      0 kB R      0 kB !
+🔶 G  174 ms I  173 ms T    1 ms S      0 kB R      0 kB  I
+🔶 G  176 ms I  175 ms T    0 ms S      0 kB R      0 kB  hope
+🔶 G  178 ms I  178 ms T    0 ms S      0 kB R      0 kB  you
+🔶 G  176 ms I  175 ms T    0 ms S      0 kB R      0 kB ’
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB re
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB  doing
+🔶 G  176 ms I  176 ms T    0 ms S      0 kB R      0 kB  well
+🔶 G  176 ms I  175 ms T    0 ms S      0 kB R      0 kB .
+🔶 G  183 ms I  181 ms T    0 ms S      0 kB R      0 kB  Hinweis
+🔶 G  178 ms I  177 ms T    0 ms S      0 kB R      0 kB :
+🔶 G  171 ms I  170 ms T    0 ms S      0 kB R      0 kB  Ein
+🔶 G  176 ms I  175 ms T    1 ms S      0 kB R      0 kB ige
+🔶 G  176 ms I  175 ms T    0 ms S      0 kB R      0 kB  der
+Generated tokens:    16
+Avg generation time: 176.19 ms
+Avg inference time:  175.50 ms
+Avg transfer time:   0.12 ms
+
