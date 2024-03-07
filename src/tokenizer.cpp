@@ -405,6 +405,7 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
     unsigned long totalInferenceTime = 0;
     unsigned long totalTransferTime = 0;
     unsigned long totalDetailedTime[NUM_TASKS] = {0};
+    std::string generated_text = "" + *prompt;
     while (pos < steps) {
         unsigned long startTime = timeMs();
         // 执行推理，得到推理输出，模型输出的Logits：在生成Token序列时，LLM实际上会计算每个可能Token的Logits。这些Logits表示了模型对每个Token的预测分数。在生成过程中，LLM会选择具有最高Logits值的Token作为下一个生成的Token。
@@ -448,6 +449,7 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
         // print the token as string, decode it with the Tokenizer object
         // 将token转为字符并打印，token为上一个，next为当前token
         char* piece = tokenizer.decode(token, next);
+        generated_text += piece;
 
         printf("🔶 G %4ld ms I %4ld ms T %4ld ms S %6ld kB R %6ld kB ", generationTime, inferenceTime, transferTime, sentBytes / 1024, recvBytes / 1024);
         // for (unsigned int i = 0; i < NUM_TASKS; i++) {
@@ -460,6 +462,8 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
         token = next;
     }
 
+    // 生成结束后，打印完整的生成文本
+    printf("\nGenerated text:\n%s\n", generated_text.c_str());
     free(promptTokens);
 
     unsigned long rootTime = 0;
@@ -497,5 +501,8 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
     for (unsigned int i = 0; i < NUM_TASKS; i++) {
         logfile << i << "," << totalDetailedTime[i] / static_cast<double>(pos) << std::endl;
     }
+
+    // TODO: 将这些信息一并保存(TransformerSpec* spec, Inference* inference, SocketPool* socketPool, char* tokenizerPath, float temperature, float topp, int steps, char* prompt)
+    // 保存文件
     logfile.close();
 }
