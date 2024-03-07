@@ -60,6 +60,13 @@
     }
 #endif
 
+/*这个函数 softmax 实现了 Softmax 操作,它是一种常用的机器学习和深度学习技术,将一组实数值映射到 (0, 1) 区间内的概率分布上。
+
+找到输入向量中的最大值 maxVal。这一步是为了防止指数运算时出现数值上溢的情况,提高数值稳定性。如果目标架构支持 NEON SIMD 指令集,则使用矢量指令进行加速。
+对输入向量中的每个元素 x[i] 执行指数变换 exp(x[i] - maxVal)。这样做是为了将输入值映射到正区间,同时利用最大值的减法进行数值稳定化。
+计算所有指数项之和 sum。
+将每个指数项除以总和 sum,从而得到归一化的概率分布。
+该函数的输入为一个浮点数数组 x 和数组大小 size。输出则是将 x 原地更新为对应的 Softmax 概率分布。*/
 void softmax(float* x, const int size) {
     float maxVal;
 #if defined(__ARM_NEON)
@@ -91,6 +98,15 @@ void softmax(float* x, const int size) {
     }
 }
 
+/*这个函数 rms 计算给定浮点数数组 x 的均方根 (Root Mean Square, RMS)。具体来说,它执行以下步骤:
+
+首先断言输入数组大小 size 是 4 的整数倍,这是为了方便使用 NEON SIMD 指令集进行加速。
+初始化 ss 变量,用于累加平方和。
+如果目标架构支持 NEON,则使用矢量指令遍历数组,每次加载 4 个元素,计算它们的平方和,并累加到 fs 向量中。最后通过 vaddvq_f32 指令将向量中的元素相加得到 ss。
+将累加的平方和 ss 除以数组大小 size,得到均值。
+为了增加数值稳定性,在均值上加上一个很小的常数 1e-5。
+计算均值的平方根的倒数,即均方根的倒数。
+返回均方根的倒数。*/
 float rms(const float* x, const int size) {
     assert(size % 4 == 0);
     float ss;
@@ -114,6 +130,18 @@ float rms(const float* x, const int size) {
     return ss;
 }
 
+/*这个函数 rmsnorm 实现了对输入向量 x 进行 RMS 归一化 (Root Mean Square Normalization) 的操作,并将结果存储在输出向量 o 中。具体来说,它执行以下步骤:
+
+断言输入向量大小 size 是 4 的整数倍,以方便使用 NEON SIMD 指令集。同时还断言输入大小能够被线程数 nThreads 整除,以支持并行计算。
+根据线程数 nThreads 将输入向量划分为多个切片,每个线程处理一个切片。计算出当前线程需要处理的起始和结束索引。
+如果目标架构支持 NEON,则使用矢量指令对切片中的数据进行并行处理。具体操作是:
+加载 4 个权重值到矢量 fw
+加载 4 个输入值到矢量 fx
+将 fx 与 fw 逐元素相乘
+将结果与均方根倒数 ms 相乘
+将计算结果存储到输出向量 o 对应位置
+如果不支持 NEON,则使用标量操作对切片中的数据进行序列处理,执行 o[j] = weight[j] * (ms * x[j])。
+该函数实现了对输入向量进行归一化的操作,即将每个元素乘以一个权重,再除以输入向量的均方根。*/
 void rmsnorm(float* o, const float* x, const float ms, const float* weight, const int size, unsigned int nThreads, unsigned int threadIndex) {
     assert(size % 4 == 0);
     assert(size % nThreads == 0);
@@ -140,6 +168,16 @@ void rmsnorm(float* o, const float* x, const float ms, const float* weight, cons
 #endif
 }
 
+/*这个结构体 MatmulThreadInfo 用于存储矩阵乘法操作所需的信息,并被用于多线程计算。它包含以下字段:
+
+pthread_t handler: 一个线程句柄,用于标识和管理线程。
+float* output: 指向输出矩阵的指针。
+void* input: 指向输入矩阵的指针,类型为 void* 以支持不同的数据类型。
+void* weights: 指向权重矩阵的指针,同样类型为 void* 以支持不同的数据类型。
+int n: 输入矩阵的行数。
+int ds: 当前线程需要处理的输出矩阵行的起始索引。
+int de: 当前线程需要处理的输出矩阵行的结束索引(不包括该索引)。
+这个结构体是为了方便地将矩阵乘法操作分配给多个线程执行。每个线程都会获得一个 MatmulThreadInfo 实例,其中包含了该线程需要处理的输出矩阵行范围、输入矩阵和权重矩阵等必要信息。*/
 struct MatmulThreadInfo {
     pthread_t handler;
     float* output;
@@ -150,6 +188,17 @@ struct MatmulThreadInfo {
     int de;
 };
 
+/*这个函数 matmulF32 实现了矩阵乘法操作,其中输入矩阵和权重矩阵都使用 32 位浮点数 (F32) 格式存储。它是一个多线程函数,每个线程负责计算输出矩阵的一部分行。
+
+从 MatmulThreadInfo 结构体中获取输入矩阵、权重矩阵和输出矩阵的指针,以及需要计算的输出矩阵行范围。
+如果目标架构支持 NEON SIMD 指令集,则使用矢量化操作来加速计算。对于每一行:
+初始化一个 NEON 向量 z 为 0
+使用 vld1q_f32 指令每次加载 4 个输入元素到 NEON 向量 q
+使用 vld1q_f32 指令每次加载 4 个权重元素到 NEON 向量 p
+使用 vfmaq_f32 指令计算 q 和 p 的矢量乘积,并累加到 z
+使用 vaddvq_f32 指令将 z 向量中的元素相加,得到该行的输出值
+该函数利用了多线程并行计算和 NEON SIMD 指令集(如果可用)来加速矩阵乘法操作。每个线程负责计算输出矩阵的一部分行,而 NEON 指令则通过向量化操作来提高单线程的计算效率。这种优化方式在处理大型矩阵时可以显著提升性能。
+*/
 void matmulF32(MatmulThreadInfo* a) {
     const float* input = (float*)a->input;
     float* w = (float*)a->weights;
@@ -179,6 +228,15 @@ void matmulF32(MatmulThreadInfo* a) {
 #endif
 }
 
+/*这个函数 matmulF16 也实现了矩阵乘法操作,但与 matmulF32 不同的是,权重矩阵使用 16 位浮点数 (F16) 格式存储,以节省内存空间。
+从 MatmulThreadInfo 结构体中获取输入矩阵、权重矩阵和输出矩阵的指针,以及需要计算的输出矩阵行范围。
+对于每一行:
+初始化一个浮点数变量 val 为 0,用于累加该行的结果。
+遍历该行的所有列:
+使用 convertF16ToF32 函数将当前 F16 权重值转换为 F32 格式,得到浮点数 ww。
+将 ww 与对应的输入元素相乘,并累加到 val。
+将 val 存储到输出矩阵对应位置。
+由于权重矩阵使用 F16 格式存储,因此在计算过程中需要首先将 F16 权重转换为 F32 格式,然后再与 F32 输入矩阵相乘。这个转换操作由 convertF16ToF32 函数完成。*/
 void matmulF16(MatmulThreadInfo* a) {
     const float* input = (float*)a->input;
     uint16_t* w = (uint16_t*)a->weights;
@@ -193,6 +251,24 @@ void matmulF16(MatmulThreadInfo* a) {
     }
 }
 
+/*这段代码实现了一种利用 Q40 格式存储权重矩阵的矩阵乘法算法。Q40 是一种定点数格式,使用 40 位整数来表示浮点数,可以大幅减少内存占用。
+
+首先定义了一个名为 BlockQ40 的结构体,用于存储 Q40 格式的数据。每个 BlockQ40 包含一个 16 位的 delta 值和 16 个 4 位的 quants 值。
+
+matmulQ40 函数的工作流程如下:
+
+从 MatmulThreadInfo 结构体中获取输入矩阵、权重矩阵和输出矩阵的指针,以及需要计算的输出矩阵行范围。
+将权重矩阵分成多个块,每个块包含 8 个 BlockQ40 结构体,即 128 个 Q40 值。
+如果目标架构支持 NEON SIMD 指令集,则使用矢量化操作来加速计算。对于每一行:
+初始化一个 NEON 向量 u 为 0。
+遍历输入矩阵的每一行:
+调用 dequantizeQ40Row 函数将当前权重块解码为浮点数,存储在 group 数组中。
+使用 vld1q_f32 指令加载 4 个输入元素到 NEON 向量 a0。
+使用 vld1q_f32 指令加载 4 个解码后的权重值到 NEON 向量 b0。
+使用 vfmaq_f32 指令计算 a0 和 b0 的矢量乘积,并累加到 u。
+使用 vaddvq_f32 指令将 u 向量中的元素相加,得到该行的输出值。
+
+通过使用 Q40 格式存储权重矩阵,可以大幅减少内存占用,但需要在计算时进行解码操作,增加了一定的 CPU 开销。不过,该实现利用了 NEON SIMD 指令集(如果可用)来加速计算,从而在一定程度上缓解了这一开销。*/
 void matmulQ40(MatmulThreadInfo* a) {
     const int blocksPerRow = 8;
     const int k = QK40 * blocksPerRow;
@@ -341,6 +417,22 @@ void matmulQ40vQ80(MatmulThreadInfo* a) {
 //   |_________|   n | |      |_|
 //        n          |_|       1
 //                    1
+/*
+根据输入矩阵和权重矩阵的数据类型调用相应的矩阵乘法。支持32位浮点数、16位浮点数、Q40和Q80格式的数。
+首先初始化一个 MatmulThreadInfo 结构体 s,用于存储矩阵乘法所需的信息,包括输出矩阵指针、输入矩阵指针、权重矩阵指针、输入矩阵行数 n,以及当前线程需要计算的输出矩阵行范围。
+
+根据输入矩阵和权重矩阵的数据类型,调用对应的专门矩阵乘法函数:
+如果输入矩阵为 F32 格式:
+如果权重矩阵也为 F32 格式,调用 matmulF32 函数。
+如果权重矩阵为 F16 格式,调用 matmulF16 函数。
+如果权重矩阵为 Q40 格式,调用 matmulQ40 函数。
+如果输入矩阵为 Q80 格式,且权重矩阵为 Q40 格式,调用 matmulQ40vQ80 函数。
+如果输入矩阵和权重矩阵的数据类型组合不受支持,则打印错误消息并退出程序。
+利用 NEON SIMD 指令集加速 F32 格式的矩阵乘法,而 matmulQ40 函数则针对压缩的 Q40 格式，先dequantize再计算。
+
+通过这种方式,该实现可以在内存使用和计算效率之间进行权衡。使用较低精度的数据类型(如 F16 和 Q40)可以减少内存占用,而使用较高精度的数据类型(如 F32)则可以获得更高的计算精度。
+该函数还支持多线程并行计算,每个线程负责计算输出矩阵的一部分行,以充分利用现代 CPU 的并行计算能力。
+*/
 void matmul(FloatType weightsFloatType, FloatType inputFloatType, float* output, void* input, void* weights, int n, int d, unsigned int nThreads, unsigned int threadIndex) {
     MatmulThreadInfo s;
     s.output = output;
