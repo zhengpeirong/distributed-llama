@@ -169,7 +169,7 @@ if __name__ == '__main__':
         usage()
 
     modelName = modelPath.split('/')[-1]
-    outputFileName = f'dllama_{modelName}_{targetFloatType}.bin'
+    outputFileName = f'./model/dllama_{modelName}_{targetFloatType}.bin'
 
     print(f'Model name: {modelName}')
     print(f'Target float type: {targetFloatType}')

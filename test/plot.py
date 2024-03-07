@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-csv_path = "/root/WorkSpace/distributed-llama/test/dllama_llama-2-7b_q40/1PC/20240306193547/1PC.csv"
-save_path = "/root/WorkSpace/distributed-llama/test/dllama_llama-2-7b_q40/1PC/20240306193547/latency_bar.pdf"
+csv_path = "test/dllama_llama-2-7b_q40/1PC_8threads/20240306203041/latency.csv"
+save_path = "test/dllama_llama-2-7b_q40/1PC_8threads/20240306203041/latency_bar.pdf"
 
 data = pd.read_csv(csv_path, delimiter=',')
 arr = data.to_numpy()
