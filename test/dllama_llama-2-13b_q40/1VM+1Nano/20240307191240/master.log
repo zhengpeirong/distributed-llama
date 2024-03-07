@@ -1,0 +1,11 @@
+Test 0
+💡 dim: 5120
+💡 hiddenDim: 13824
+💡 nLayers: 40
+💡 nHeads: 40
+💡 nKvHeads: 40
+💡 vocabSize: 32000
+💡 seqLen: 2048
+💡 nSlices: 2
+Error sending data 104 (Connection reset by peer)
+
