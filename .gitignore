@@ -4,6 +4,7 @@ result/*
 *.dSYM
 *.data
 *.bin
+*.out
 __pycache__
 
 quants-test

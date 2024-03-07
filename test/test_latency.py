@@ -35,8 +35,8 @@ def execute(args, command, test_id=-1):
     return out
 
 def test(args):
-    command = ["nice", "-n", "-20", "/root/WorkSpace/distributed-llama/main", "inference", 
-            "--model", "/root/WorkSpace/distributed-llama/model/{}.bin".format(args.model), "--tokenizer", "/root/WorkSpace/distributed-llama/model/tokenizer.bin",
+    command = ["nice", "-n", "-20", "./main", "inference", 
+            "--model", "./model/{}.bin".format(args.model), "--tokenizer", "./model/tokenizer.bin",
             "--weights-float-type", "q40", "--buffer-float-type", "q80", 
             "--prompt", "Hello world", "--steps", "16", "--nthreads", "{}".format(args.thread)]
     
@@ -79,7 +79,7 @@ def test(args):
     test_name.append("Test Avg")
 
     data = pd.DataFrame({"Test":test_name, "Avg generation time(ms)":generation_time, "Avg inference time(ms)":inference_time, "Avg transfer time(ms)":transfer_time,})
-    data.to_csv(os.path.join(args.save_folder,'{}.csv'.format(args.test_name)),index=False,sep=',')
+    data.to_csv(os.path.join(args.save_folder,'latency.csv'),index=False,sep=',')
 
 def ssh_worker_execmd(args, worker_ip, test_id): 
 
@@ -107,8 +107,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument('--test_name', type=str, default="1PC+7Nano", help="the name of test")
-    # parser.add_argument('--works', type=list, default=["192.168.6.1","192.168.6.2","192.168.6.4","192.168.6.5", "192.168.6.7", "192.168.6.8","192.168.6.10"], help="the ip of workers")
+    parser.add_argument('--test_name', type=str, default="1PC+7Nano", help="the name of test")
+    parser.add_argument('--works', type=list, default=["192.168.6.1","192.168.6.2","192.168.6.4","192.168.6.5", "192.168.6.7", "192.168.6.8","192.168.6.10"], help="the ip of workers")
 
     # parser.add_argument('--test_name', type=str, default="1PC+3Nano", help="the name of test")
     # parser.add_argument('--works', type=list, default=["192.168.6.1","192.168.6.7","192.168.6.8"], help="the ip of workers")
@@ -116,10 +116,10 @@ if __name__ == '__main__':
     # parser.add_argument('--test_name', type=str, default="1PC+1Nano", help="the name of test")
     # parser.add_argument('--works', type=list, default=["192.168.6.1"], help="the ip of workers")
 
-    parser.add_argument('--test_name', type=str, default="1PC_8threads", help="the name of test")
-    parser.add_argument('--works', type=list, default=[], help="the ip of workers")
-    parser.add_argument('--thread', type=int, default=8, help="num of threads")
+    # parser.add_argument('--test_name', type=str, default="1PC_8threads", help="the name of test")
+    # parser.add_argument('--works', type=list, default=[], help="the ip of workers")
 
+    parser.add_argument('--thread', type=int, default=4, help="num of threads")
     parser.add_argument('--model', type=str, default="dllama_llama-2-7b_q40",help="the model")
     parser.add_argument('--warm_up', type=int, default=2)
     parser.add_argument('--loop', type=int, default=10)
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     currentDateAndTime = datetime.now()
-    save_folder = os.path.join("/root/WorkSpace/distributed-llama/test", args.model, args.test_name,currentDateAndTime.strftime("%Y%m%d%H%M%S"))
+    save_folder = os.path.join("./test", args.model, args.test_name,currentDateAndTime.strftime("%Y%m%d%H%M%S"))
     os.makedirs(save_folder)
     args.save_folder = save_folder
 
