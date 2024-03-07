@@ -230,7 +230,23 @@ char* TransformerBuffer::getSliced(uint8_t bufferIndex, uint8_t sliceIndex) {
 size_t TransformerBuffer::getSlicedBytes(uint8_t bufferIndex) {
     return bufferBytes[bufferIndex] / nSlices;
 }
+/*这是 Transformer 类的构造函数实现。它接受两个参数:一个 TransformerSpec 指针,它包含 Transformer 模型的配置信息;以及一个 sliceIndex,用于标识是构造主机端还是设备端的实例。
 
+构造函数执行以下操作:
+
+将传入的 spec 和 sliceIndex 分别赋值给类的成员变量。
+
+创建一个新的 TransformerBuffer 实例,并将其赋值给 buffer 成员变量。TransformerBuffer 可能用于存储模型计算所需的中间缓冲区。
+
+根据 spec 中的层数 (nLayers) 分配一个 TransformerBlock 数组,并为每一层创建一个新的 TransformerBlock 实例。TransformerBlock 可能表示 Transformer 模型中的一个块或层。
+
+如果是创建主机端实例 (IS_ROOT_SLICE(sliceIndex) 为真),则执行以下操作:
+
+根据词表大小 (vocabSize) 和模型维度 (dim),计算词嵌入表 (tokenEmbeddingTable) 所需的字节数,并分配相应的内存空间。
+分配用于存储最终层归一化因子 (rmsFinal) 的内存空间。
+根据词表大小、模型维度和权重数据类型,计算分类头权重 (wcls) 所需的字节数,并分配相应的内存空间。
+分配用于存储模型输入 (x) 和输出 logits (logits) 的内存空间。
+这个构造函数主要负责初始化 Transformer 模型的核心组件,包括缓冲区、层块以及一些权重相关的内存空间。它还根据是否为主机端实例来分配一些额外的内存空间,用于存储词嵌入表、归一化因子、分类头权重以及输入输出数据。*/
 Transformer::Transformer(TransformerSpec* spec, uint8_t sliceIndex) {
     this->spec = spec;
     this->sliceIndex = sliceIndex;
