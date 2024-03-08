@@ -8,22 +8,21 @@ def ssh_worker_execmd(worker_ip, port, username, password, command):
     s.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
-        s.connect(hostname=worker_ip, port=port,
-                  username=username, password=password, timeout=10)
+        s.connect(hostname=worker_ip, port=port, username=username, password=password, timeout=10)
         stdin, stdout, stderr = s.exec_command(command)
         # print(stdout.read().decode("utf-8").strip())
         return stdout.read()
 
     except paramiko.AuthenticationException:
-        print("Authentication failed.")
+        print("SSH: Authentication failed.")
         return None
 
     except paramiko.SSHException as e:
-        print("Unable to establish SSH connection:", e)
+        print("SSH: Unable to establish SSH connection:", e)
         return None
 
     except socket.timeout:
-        print("Connection timed out.")
+        print("SSH: Connection timed out.")
         return None
 
     except Exception as e:
