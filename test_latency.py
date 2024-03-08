@@ -8,7 +8,7 @@ import pandas as pd
 from multiprocessing.pool import ThreadPool
 from datetime import datetime
 from functools import partial
-from utils.common import save_log, ssh_worker_execmd
+from myutils.common import save_log, ssh_worker_execmd
 
 
 def execute(args, master_command, worker_command, test_id=-1):
@@ -99,34 +99,28 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--test_name', type=str,
-                        default="1VM+7Nano", help="the name of test")
-    parser.add_argument('--works', type=list, default=["192.168.6.1", "192.168.6.2", "192.168.6.4",
-                        "192.168.6.5", "192.168.6.7", "192.168.6.8", "192.168.6.10"], help="the ip of workers")
+    # parser.add_argument('--test_name', type=str, default="1VM+7Nano", help="the name of test")
+    # parser.add_argument('--works', type=list, default=["192.168.6.1", "192.168.6.2", "192.168.6.4","192.168.6.5", "192.168.6.7", "192.168.6.8", "192.168.6.10"], help="the ip of workers")
 
     # parser.add_argument('--test_name', type=str, default="1VM+3Nano", help="the name of test")
     # parser.add_argument('--works', type=list, default=["192.168.6.5","192.168.6.2","192.168.6.4"], help="the ip of workers")
 
-    # parser.add_argument('--test_name', type=str, default="1VM+1Nano", help="the name of test")
-    # parser.add_argument('--works', type=list, default=["192.168.6.1"], help="the ip of workers")
+    parser.add_argument('--test_name', type=str, default="1VM+1Nano", help="the name of test")
+    parser.add_argument('--works', type=list, default=["192.168.6.2"], help="the ip of workers")
 
     # parser.add_argument('--test_name', type=str, default="1VM_8threads", help="the name of test")
     # parser.add_argument('--works', type=list, default=[], help="the ip of workers")
 
-    parser.add_argument('--threads', type=int,
-                        default=4, help="num of threads")
-    parser.add_argument('--steps', type=int, default=16,
-                        help="num of generated tokens")
-    parser.add_argument('--model', type=str,
-                        default="dllama_llama-2-7b_q40", help="the model")
+    parser.add_argument('--threads', type=int, default=4, help="num of threads")
+    parser.add_argument('--steps', type=int, default=16,help="num of generated tokens")
+    parser.add_argument('--model', type=str, default="dllama_llama-2-7b_q40", help="the model")
     parser.add_argument('--warm_up', type=int, default=2)
     parser.add_argument('--loop', type=int, default=10)
 
     args = parser.parse_args()
 
     currentDateAndTime = datetime.now()
-    save_folder = os.path.join(
-        "./test", args.model, args.test_name, currentDateAndTime.strftime("%Y%m%d%H%M%S"))
+    save_folder = os.path.join("./test", args.model, args.test_name, currentDateAndTime.strftime("%Y%m%d%H%M%S"))
     os.makedirs(save_folder)
     args.save_folder = save_folder
 
