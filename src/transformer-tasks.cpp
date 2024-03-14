@@ -17,6 +17,13 @@ static unsigned long long total_time_above_workers = 0;
     TransformerSpec* spec = transformer->spec;
 
 // scatter
+/*
+syncUnitBuffer函数用于在多线程环境下同步缓冲区数据。
+
+首先获取缓冲区指针buffer和字节大小bufferBytes。
+如果ctx->socketPool不为空,表示是主节点(root),将缓冲区数据通过socketPool分发给工作节点。
+如果ctx->socket不为空且当前是工作节点(threadIndex不为0),则从主节点读取缓冲区数据。
+该代码似乎是一个并行计算框架的一部分,用于在多线程环境下高效地进行数据传输和计算。它利用了socket进行线程间通信,使用缓冲区存储中间数据,并通过同步机制来保证数据的一致性。*/
 void syncUnitBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t bufferIndex) {
     char* buffer = ctx->transformer->buffer->getUnit(bufferIndex);
     size_t bufferBytes = ctx->transformer->buffer->getUnitBytes(bufferIndex);
@@ -41,6 +48,21 @@ void syncUnitBuffer(unsigned int nThreads, unsigned int threadIndex, Transformer
 }
 
 // gather
+/*这段代码定义了一个名为syncSliceOfSlicedBuffer的函数,功能是在多线程环境下同步切片缓冲区的数据。
+首先获取缓冲区的字节大小bufferBytes。
+
+如果ctx->socketPool不为空,表示是主节点(root):
+计算需要通信的socket数量nSockets。
+根据线程索引和socket索引,为每个socket准备一个SocketIo结构体,存储socket索引、数据指针和大小。
+从工作节点读取切片缓冲区数据,通过ctx->socketPool->readMany完成读取操作。
+
+如果ctx->socket不为空且当前是工作节点(threadIndex为0):
+获取当前工作节点的切片缓冲区指针buffer。
+通过ctx->socket->write将切片缓冲区数据写回主节点。
+
+该函数的作用是在多线程环境下,主节点从工作节点收集切片后的缓冲区数据,而工作节点则向主节点发送自己的切片缓冲区数据。
+代码使用了SocketPool和Socket进行线程间通信,并使用切片缓冲区技术来分散数据处理的负担,提高并行计算效率。
+总的来说,这是一个线程并行计算框架的同步函数,用于在主节点和工作节点之间传递切片缓冲区数据,保证并行计算的正确性和高效性。*/
 void syncSliceOfSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t bufferIndex) {
     size_t bufferBytes = ctx->transformer->buffer->getSlicedBytes(bufferIndex);
     if (ctx->socketPool != NULL) {
@@ -67,6 +89,26 @@ void syncSliceOfSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, Tr
 }
 
 // broadcast
+/*这段代码定义了一个名为syncMissingSlicesOfSlicedBuffer的函数,用于在多节点(树莓派)环境下广播(broadcast)缺失的切片缓冲区数据。
+首先获取切片缓冲区的字节大小sliceBytes。
+
+如果ctx->socketPool不为空,表示是主节点(root,代表一个树莓派):
+计算需要通信的工作节点(其他树莓派)数量nSockets。
+遍历所有切片索引si(除了最后一个切片)。
+对于每个切片索引si,为每个工作节点准备一个SocketIo结构体,其中:
+socketIndex表示工作节点索引。
+workerSliceIndex表示工作节点应该处理的切片索引。
+sliceIndex则是当前切片的索引,根据workerSliceIndex确定。
+通过ctx->socketPool->writeMany将当前切片广播给所有工作节点。
+
+如果ctx->socket不为空且当前是工作节点(threadIndex为0,代表一个树莓派):
+遍历所有切片索引sliceIndex(包括自己的切片)。
+如果sliceIndex不等于自己的切片索引,则从主节点读取该切片的缓冲区数据。
+该函数的作用是让主节点将其他所有切片的缓冲区数据广播给工作节点,而工作节点则从主节点接收除自己切片之外的所有其他切片数据。
+
+通过这种广播机制,每个工作节点(树莓派)不仅拥有自己的切片数据,还拥有其他所有切片的数据,从而能够进行进一步的并行计算和处理。
+代码使用了SocketPool和Socket进行节点间通信,并利用切片缓冲区技术来分散数据处理的负担,提高并行计算效率。
+总的来说,这是一个分布式并行计算框架中的广播同步函数,用于在主节点(一个树莓派)和工作节点(其他树莓派)之间广播切片缓冲区数据,保证所有节点拥有完整的数据,为后续的并行计算做准备。*/
 void syncMissingSlicesOfSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t bufferIndex) {
     size_t sliceBytes = ctx->transformer->buffer->getSlicedBytes(bufferIndex);
     if (ctx->socketPool != NULL) {
@@ -99,6 +141,22 @@ void syncMissingSlicesOfSlicedBuffer(unsigned int nThreads, unsigned int threadI
     }
 }
 
+/*这段代码定义了一个名为quantizeUnitBuffer的函数,用于对缓冲区数据进行量化(quantization)操作。
+首先检查transformer->spec->bufferFloatType的值。如果是F32(32位浮点数),则直接返回,不进行量化操作。
+
+如果bufferFloatType是Q80(定点数),则进行量化操作。
+
+调用quantizeQ80Row函数,对缓冲区数据进行量化:
+
+第一个参数是源缓冲区(32位浮点数)的指针。
+第二个参数是目标缓冲区(定点数Q80)的指针。
+第三个参数是源缓冲区中浮点数的个数。
+第四个和第五个参数分别是线程数和当前线程索引,用于并行化量化操作。
+quantizeQ80Row函数的作用是将32位浮点数数组量化为Q80格式的定点数数组,Q80表示80位定点数(1位符号位,15位整数位,64位小数位)。
+
+量化操作可以减小数据大小,提高计算效率,但也会引入一定的精度损失。在深度学习等领域,常采用量化技术来加速计算和节省内存。
+
+该函数在多线程环境下并行执行量化操作,提高计算性能。*/
 void quantizeUnitBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t sourceBufferIndex, uint8_t targetBufferIndex) {
     if (ctx->transformer->spec->bufferFloatType == F32) return;
     assert(ctx->transformer->spec->bufferFloatType == Q80);
@@ -111,6 +169,19 @@ void quantizeUnitBuffer(unsigned int nThreads, unsigned int threadIndex, Transfo
         threadIndex);
 }
 
+/*这段代码定义了一个名为quantizeSlicedBuffer的函数,用于对切片缓冲区数据进行量化操作。
+首先检查transformer->spec->bufferFloatType的值,如果是F32(32位浮点数),则直接返回,不进行量化操作。
+如果当前线程是根切片(sliceIndex为0),且quantizeRootSlice参数为false,则也直接返回,不对根切片进行量化。
+如果bufferFloatType是Q80(定点数),则进行量化操作。
+调用quantizeQ80Row函数,对切片缓冲区数据进行量化:
+第一个参数是源切片缓冲区(32位浮点数)的指针,通过getSliced获取。
+第二个参数是目标切片缓冲区(定点数Q80)的指针,也是通过getSliced获取。
+第三个参数是源切片缓冲区中浮点数的个数。
+第四个和第五个参数分别是线程数和当前线程索引,用于并行化量化操作。
+quantizeQ80Row函数的作用是将32位浮点数数组量化为Q80格式的定点数数组,Q80表示80位定点数(1位符号位,15位整数位,64位小数位)。
+
+量化操作可以减小数据大小,提高计算效率,但也会引入一定的精度损失。在深度学习等领域,常采用量化技术来加速计算和节省内存。
+该函数在多线程环境下并行执行量化操作,提高计算性能。与quantizeUnitBuffer不同的是,quantizeSlicedBuffer对切片缓冲区进行量化,可以选择是否对根切片进行量化。*/
 void quantizeSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, bool quantizeRootSlice, uint8_t sourceBufferIndex, uint8_t targetBufferIndex) {
     if (ctx->transformer->spec->bufferFloatType == F32) return;
     if (ctx->transformer->sliceIndex == 0 && !quantizeRootSlice) return;
@@ -124,6 +195,28 @@ void quantizeSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, Trans
         threadIndex);
 }
 
+/*这段代码定义了一个名为dequantizeSlicedBuffer的函数,用于对切片缓冲区数据进行反量化(dequantization)操作。反量化是将离散值(如定点数)转换为连续值(如浮点数)的过程,是量化的逆过程。
+
+首先检查transformer->spec->bufferFloatType的值,如果是F32(32位浮点数),则直接返回,不进行反量化操作。
+
+如果bufferFloatType是Q80(定点数),则进行断言检查。
+
+还进行了一个断言,确保ctx->socketPool不为空,即这个函数只能由主节点调用。
+
+根据dequantizeRootSlice参数,确定从哪个切片索引sliceIndex开始进行反量化。如果dequantizeRootSlice为真,从切片0(根切片)开始,否则从切片1开始。
+
+在一个循环中,对每个切片执行以下操作:
+
+调用dequantizeQ80Row函数进行反量化。
+第一个参数是源切片缓冲区(定点数Q80)的指针,通过getSliced获取。
+第二个参数是目标切片缓冲区(32位浮点数)的指针,也是通过getSliced获取。
+第三个参数是源切片缓冲区中定点数的个数,乘以QK80(一个常数,值为2^-64)进行缩放。
+第四个和第五个参数分别是线程数和当前线程索引,用于并行化反量化操作。
+dequantizeQ80Row函数的作用是将Q80格式的定点数数组反量化为32位浮点数数组。
+
+反量化操作是量化的逆过程,可以从压缩的定点数数据恢复出原始的浮点数数据,但也会引入一定的精度损失。
+
+该函数在多线程环境下并行执行反量化操作,提高计算性能。它提供了一个选项,允许决定是否对根切片进行反量化。*/
 void dequantizeSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, bool dequantizeRootSlice, uint8_t sourceBufferIndex, uint8_t targetBufferIndex) {
     if (ctx->transformer->spec->bufferFloatType == F32) return;
     assert(ctx->transformer->spec->bufferFloatType == Q80);
@@ -140,9 +233,8 @@ void dequantizeSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, Tra
     }
 }
 
-//
-
 // 单机单线程reduction求rms
+// TODO: 改成多线程
 int rmsAtt(TASK_ARGS) {
     TASK_VARIABLES;
     if (threadIndex == 0) {
@@ -208,7 +300,9 @@ int dequantizeQkv(TASK_ARGS) {
     dequantizeSlicedBuffer(nThreads, threadIndex, ctx, false, TB_SLICED_V_QUANTIZED, TB_SLICED_V);
     return TASK_CONTINUE;
 }
-// 单线程单机多头注意力
+/* 单线程单机多头注意力 
+TODO: 改成多线程
+*/
 int multiheadAtt(TASK_ARGS) {
     TASK_VARIABLES;
     if (threadIndex != 0) {
@@ -287,9 +381,7 @@ int multiheadAtt(TASK_ARGS) {
     }
 
     unsigned long executionTime = timeMs() - startTime; 
-    // printf("🔶 multiheadAtt %4ld ms", executionTime);
     total_time_above_workers += executionTime; // 累加运行时间
-    // printf("🔶Total multiheadAtt %4ld ms", total_time_above_workers);
     return TASK_CONTINUE;
 }
 
@@ -374,10 +466,36 @@ int syncRmfFfn(TASK_ARGS) {
     return TASK_CONTINUE;
 }
 
-// 单隐层FFN feed-forword-network
-// 输入->隐藏层->输出
-// 有两个权重
-// FFN算隐层
+/*前馈网络是Transformer架构中的另一个关键组件,通常由两层全连接层组成,中间使用非线性激活函数。该函数的主要功能和实现细节如下:
+
+功能:
+
+将多头注意力机制的输出(xb)作为输入。
+通过两层全连接层和非线性激活函数,实现前馈网络的变换。
+输出结果存储在hb0中。
+输入:
+
+xb: 多头注意力机制的输出,维度为[batch_size, seq_len, hidden_dim]。
+hb0: 输出缓冲区,用于存储前馈网络的输出,维度与xb相同。
+实现细节:
+
+使用matmul函数实现矩阵乘法运算,完成两层全连接层的线性变换。
+第一层全连接层: hb0 = xb * block->w10
+第二层全连接层: block->hb20 = xb * block->w30
+应用SwiGLU(Sigmoid-Weighted Linear Unit)非线性激活函数。
+对hb0中的每个元素应用SwiGLU激活函数,公式为: x * sigmoid(x)。
+与block->hb20(第二层全连接层的输出)逐元素相乘,得到最终的前馈网络输出。
+该函数支持多线程并行计算,每个线程处理hb0的一部分数据。
+并行性:
+
+函数利用多线程并行计算,每个线程处理hb0的一部分数据。
+使用nThreads和threadIndex控制线程数量和线程索引。
+在SwiGLU非线性激活函数的计算中,将hb0的数据均匀划分给每个线程进行计算。
+性能优化:
+
+该函数没有直接使用SIMD指令集(如NEON)进行向量化计算,但是matmul函数可能已经对矩阵乘法操作进行了优化。
+使用多线程并行计算可以提高计算性能,尤其在处理大量数据时更有优势。
+总的来说,这个ffn函数实现了Transformer架构中的前馈网络模块,包括两层全连接层的线性变换和SwiGLU非线性激活函数。它利用了多线程并行计算,可以提高计算性能。*/
 int ffn(TASK_ARGS) {
     TASK_VARIABLES;
 
