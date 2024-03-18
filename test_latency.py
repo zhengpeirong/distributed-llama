@@ -89,30 +89,28 @@ def test(args):
 
 
 if __name__ == '__main__':
-    # Nano1 192.168.6.1
-    # Nano2 192.168.6.2
-    # Nano4 192.168.6.4
-    # Nano5 192.168.6.5
-    # Nano7 192.168.6.7
-    # Nano8 192.168.6.8
-    # Nano10 192.168.6.10
+    # Node1 192.168.1.1
+    # Node2 192.168.1.2
+    # Node3 192.168.1.3
+    # Node4 192.168.1.4
 
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument('--test_name', type=str, default="1VM+7Nano", help="the name of test")
-    # parser.add_argument('--works', type=list, default=["192.168.6.1", "192.168.6.2", "192.168.6.4","192.168.6.5", "192.168.6.7", "192.168.6.8", "192.168.6.10"], help="the ip of workers")
+## test name和works设定
 
-    # parser.add_argument('--test_name', type=str, default="1VM+3Nano", help="the name of test")
-    # parser.add_argument('--works', type=list, default=["192.168.6.5","192.168.6.2","192.168.6.4"], help="the ip of workers")
 
-    parser.add_argument('--test_name', type=str, default="1VM+1Nano", help="the name of test")
-    parser.add_argument('--works', type=list, default=["192.168.6.2"], help="the ip of workers")
+    parser.add_argument('--test_name', type=str, default="1RaspberryPi", help="the name of test")
+    parser.add_argument('--works', type=list, default=[], help="the ip of workers")
 
-    # parser.add_argument('--test_name', type=str, default="1VM_8threads", help="the name of test")
-    # parser.add_argument('--works', type=list, default=[], help="the ip of workers")
+    # parser.add_argument('--test_name', type=str, default="2RaspberryPi", help="the name of test")
+    # parser.add_argument('--works', type=list, default=["192.168.1.11"], help="the ip of workers")
 
+    # parser.add_argument('--test_name', type=str, default="4RaspberryPi", help="the name of test")
+    # parser.add_argument('--works', type=list, default=["192.168.1.11", "192.168.1.12", "192.168.1.13", "192.168.1.14"], help="the ip of workers")
+
+## 其他设定
     parser.add_argument('--threads', type=int, default=4, help="num of threads")
-    parser.add_argument('--steps', type=int, default=16,help="num of generated tokens")
+    parser.add_argument('--steps', type=int, default=64,help="num of generated tokens")
     parser.add_argument('--model', type=str, default="dllama_llama-2-7b_q40", help="the model")
     parser.add_argument('--warm_up', type=int, default=2)
     parser.add_argument('--loop', type=int, default=10)
