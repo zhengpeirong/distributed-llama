@@ -2,7 +2,7 @@
 import paramiko
 import socket
 
-
+# ssh连接其他nodes并打印distributed-llama的输出
 def ssh_worker_execmd(worker_ip, port, username, password, command):
     s = paramiko.SSHClient()
     s.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -43,9 +43,8 @@ def save_log(stdout, save_path, test_id):
 
 
 if __name__ == '__main__':
-    ips = ["192.168.6.1", "192.168.6.2", "192.168.6.4",
-           "192.168.6.5", "192.168.6.7", "192.168.6.8", "192.168.6.10"]
+    ips = ["192.168.1.11", "192.168.1.12", "192.168.1.13"] #,"192.168.1.14"
     for ip in ips:
-        out = ssh_worker_execmd(ip, 22, "root", "123", "ps aux|grep distr")
+        out = ssh_worker_execmd(ip, 22, "pi", "raspberry", "ps aux|grep distr")
         print(ip)
         print(out.decode("utf-8").strip())
