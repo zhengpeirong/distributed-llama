@@ -69,6 +69,7 @@ def test(args):
         print("Test {}".format(i))
 
         out = execute(args, master_command, worker_command, i)
+        # TODO: 修改result的提取
         res = out.split("\n")[-4:-1]
         print(res)
 
