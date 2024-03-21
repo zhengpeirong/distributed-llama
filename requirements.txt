@@ -1,6 +1,2 @@
 paramiko
-subprocess
 pandas
-multiprocessing
-datetime
-functools
