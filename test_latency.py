@@ -41,14 +41,14 @@ def test(args):
                       "--model", "./model/{}.bin".format(
                           args.model), "--tokenizer", "./model/tokenizer.bin",
                       "--weights-float-type", "q40", "--buffer-float-type", "q80",
-                      "--prompt", "Hello world", "--steps", "{}".format(args.steps), "--nthreads", "{}".format(args.threads)]
+                      "--prompt", "\"Hello world\"", "--steps", "{}".format(args.steps), "--nthreads", "{}".format(args.threads)]
 
     if len(args.works) != 0:
         master_command.append("--workers")
         for work_ip in args.works:
             master_command.append("{}:9998".format(work_ip))
 
-    worker_command = "nice -n -20 /home/pi//distributed-llama/main worker --port 9998 --nthreads {}".format(
+    worker_command = "nice -n -20 /home/pi/distributed-llama/main worker --port 9998 --nthreads {}".format(
         args.threads)
 
     print(" ".join(master_command))
