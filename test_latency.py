@@ -19,7 +19,7 @@ def execute(args, master_command, worker_command, test_id=-1):
             save_log_without_stdout = partial(save_log, save_path=os.path.join(
                 args.save_folder, "worker_{}.log".format(worker_ip)), test_id=test_id)
             pool.apply_async(ssh_worker_execmd, args=(
-                worker_ip, 22, "pi", "raspberrypi", worker_command), callback=save_log_without_stdout)
+                worker_ip, 22, "root", "raspberrypi", worker_command), callback=save_log_without_stdout)
         pool.close()
 
         # Prevent ssh execution from not finishing
