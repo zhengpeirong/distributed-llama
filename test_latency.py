@@ -62,6 +62,8 @@ def test(args):
     generation_time = []
     inference_time = []
     transfer_time = []
+    serial_time = []
+    parallel_time = []
     test_name = []
     pattern = r'\d+\.\d+'
 
@@ -70,21 +72,25 @@ def test(args):
 
         out = execute(args, master_command, worker_command, i)
         # TODO: 修改result的提取
-        res = out.split("\n")[-4:-1]
+        res = out.split("\n")[-6:-1]
         print(res)
 
         generation_time.append(float(re.findall(pattern, res[0])[0]))
         inference_time.append(float(re.findall(pattern, res[1])[0]))
         transfer_time.append(float(re.findall(pattern, res[2])[0]))
+        serial_time.append(float(re.findall(pattern, res[3])[0]))
+        parallel_time.append(float(re.findall(pattern, res[4])[0]))
         test_name.append("Test {}".format(i))
 
     generation_time.append(sum(generation_time) / len(generation_time))
     inference_time.append(sum(inference_time) / len(inference_time))
     transfer_time.append(sum(transfer_time) / len(transfer_time))
+    serial_time.append(sum(serial_time) / len(serial_time))
+    parallel_time.append(sum(parallel_time) / len(parallel_time))
     test_name.append("Test Avg")
 
     data = pd.DataFrame({"Test": test_name, "Avg generation time(ms)": generation_time,
-                        "Avg inference time(ms)": inference_time, "Avg transfer time(ms)": transfer_time, })
+                        "Avg inference time(ms)": inference_time, "Avg transfer time(ms)": transfer_time,"Avg serial time(ms)": serial_time,"Avg parallel time(ms)": parallel_time, })
     data.to_csv(os.path.join(args.save_folder, 'latency.csv'),
                 index=False, sep=',')
 
@@ -100,14 +106,14 @@ if __name__ == '__main__':
 ## test name和works设定
 
 
-    parser.add_argument('--test_name', type=str, default="1RaspberryPi", help="the name of test")
-    parser.add_argument('--works', type=list, default=[], help="the ip of workers")
+    # parser.add_argument('--test_name', type=str, default="1RaspberryPi", help="the name of test")
+    # parser.add_argument('--works', type=list, default=[], help="the ip of workers")
 
     # parser.add_argument('--test_name', type=str, default="2RaspberryPi", help="the name of test")
     # parser.add_argument('--works', type=list, default=["192.168.1.11"], help="the ip of workers")
 
-    # parser.add_argument('--test_name', type=str, default="4RaspberryPi", help="the name of test")
-    # parser.add_argument('--works', type=list, default=["192.168.1.11", "192.168.1.12", "192.168.1.13", "192.168.1.14"], help="the ip of workers")
+    parser.add_argument('--test_name', type=str, default="4RaspberryPi", help="the name of test")
+    parser.add_argument('--works', type=list, default=["192.168.1.11", "192.168.1.12", "192.168.1.13", "192.168.1.14"], help="the ip of workers")
 
 ## 其他设定
     parser.add_argument('--threads', type=int, default=4, help="num of threads")
