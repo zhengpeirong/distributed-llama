@@ -478,7 +478,8 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
     printf("Avg Generation Time: %.2f ms\n", totalGenerationTime / (double)pos);
     printf("Avg Inference Time:  %.2f ms\n", totalInferenceTime / (double)pos);
     printf("Avg Transfer Time:   %.2f ms\n", totalTransferTime / (double)pos);
-    printf("Avg Addtional Time:  %.2f ms\n", rootTime / (double)pos);
+    printf("Avg Serial Time:  %.2f ms\n", rootTime / (double)pos);
+    printf("Avg Parallel Time:  %.2f ms\n", (totalInferenceTime - rootTime) / (double)pos);
 
     // 保存输出内容
     std::string folderPath = "./result/";
@@ -496,7 +497,8 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
     logfile << "Avg Generation Time," << totalGenerationTime / static_cast<double>(pos) << std::endl;
     logfile << "Avg Inference Time," << totalInferenceTime / static_cast<double>(pos) << std::endl;
     logfile << "Avg Transfer Time," << totalTransferTime / static_cast<double>(pos) << std::endl;
-    logfile << "Avg Additional Time," << rootTime / static_cast<double>(pos) << std::endl;
+    logfile << "Avg Serial Time," << rootTime / static_cast<double>(pos) << std::endl;
+    logfile << "Avg Parallel Time," << (totalInferenceTime - rootTime) / static_cast<double>(pos) << std::endl;
     logfile << "Task Index, Avg Detailed Time" << std::endl;
     for (unsigned int i = 0; i < NUM_TASKS; i++) {
         logfile << i << "," << totalDetailedTime[i] / static_cast<double>(pos) << std::endl;
@@ -505,4 +507,89 @@ void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPoo
     // TODO: 将这些信息一并保存(TransformerSpec* spec, Inference* inference, SocketPool* socketPool, char* tokenizerPath, float temperature, float topp, int steps, char* prompt)
     // 保存文件
     logfile.close();
+}
+
+
+void chat(Inference* inference, Tokenizer *tokenizer, Sampler *sampler, char *cliUserPrompt, char *cliSystemPrompt, int steps) {
+    // buffers for reading the system prompt and user prompt from stdin
+    // you'll notice they are soomewhat haphazardly and unsafely set atm
+    char systemPrompt[512];
+    char userPrompt[512];
+    const size_t renderedPromptSize = 1152;
+    char renderedPrompt[renderedPromptSize];
+    int numPromptTokens = 0;
+    int* promptTokens = (int*)malloc(1152 * sizeof(int));
+    int userIdx;
+
+    // start the main loop
+    int8_t userTurn = 1; // user starts
+    int next;        // will store the next token in the sequence
+    int token;       // stores the current token to feed into the transformer
+    int prev_token;
+    int pos = 0;     // position in the sequence
+    while (pos < steps) {
+        // when it is the user's turn to contribute tokens to the dialog...
+        if (userTurn) {
+            // get the (optional) system prompt at position 0
+            if (pos == 0) {
+                // at position 0, the user can also contribute a system prompt
+                if (cliSystemPrompt == NULL) {
+                    // system prompt was not passed in, attempt to get it from stdin
+                    readStdin("💻 Enter system prompt (optional): ", systemPrompt, sizeof(systemPrompt));
+                } else {
+                    // system prompt was passed in, use it
+                    strcpy(systemPrompt, cliSystemPrompt);
+                }
+            }
+            // get the user prompt
+            if (pos == 0 && cliUserPrompt != NULL) {
+                // user prompt for position 0 was passed in, use it
+                strcpy(userPrompt, cliUserPrompt);
+            } else {
+                // otherwise get user prompt from stdin
+                readStdin("👱 User: ", userPrompt, sizeof(userPrompt));
+            }
+            // render user/system prompts into the Llama 2 Chat schema
+            if (pos == 0 && systemPrompt[0] != '\0') {
+                char systemTemplate[] = "[INST] <<SYS>>\n%s\n<</SYS>>\n\n%s [/INST]";
+                snprintf(renderedPrompt, renderedPromptSize, systemTemplate, systemPrompt, userPrompt);
+            } else {
+                char userTemplate[] = "[INST] %s [/INST]";
+                snprintf(renderedPrompt, renderedPromptSize, userTemplate, userPrompt);
+            }
+            // encode the rendered prompt into tokens
+            tokenizer->encode(renderedPrompt, 1, 0, promptTokens, &numPromptTokens);
+            userIdx = 0; // reset the user index
+            userTurn = 0;
+            printf("🤖 Assistant: ");
+        }
+
+        // determine the token to pass into the transformer next
+        if (userIdx < numPromptTokens) {
+            // if we are still processing the input prompt, force the next prompt token
+            token = promptTokens[userIdx++];
+        } else {
+            // otherwise use the next token sampled from previous turn
+            token = next;
+        }
+        // EOS (=2) token ends the Assistant turn
+        if (token == 2) {
+            userTurn = 1;
+        }
+
+        // forward the transformer to get logits for the next token
+        float* logits = inference->infer(token, pos);
+        next = sampler->sample(logits);
+        pos++;
+
+        if (userIdx >= numPromptTokens && next != 2) {
+            // the Assistant is responding, so print its output
+            char* piece = tokenizer->decode(token, next);
+            safePrintf(piece); // same as printf("%s", piece), but skips "unsafe" bytes
+            fflush(stdout);
+        }
+        if (next == 2) { printf("\n"); }
+    }
+    printf("\n");
+    free(promptTokens);
 }
