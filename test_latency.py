@@ -113,7 +113,7 @@ if __name__ == '__main__':
     # parser.add_argument('--works', type=list, default=["192.168.1.11"], help="the ip of workers")
 
     parser.add_argument('--test_name', type=str, default="4RaspberryPi", help="the name of test")
-    parser.add_argument('--works', type=list, default=["192.168.1.11", "192.168.1.12", "192.168.1.13", "192.168.1.14"], help="the ip of workers")
+    parser.add_argument('--works', type=list, default=["192.168.1.11", "192.168.1.12", "192.168.1.13"], help="the ip of workers")
 
 ## 其他设定
     parser.add_argument('--threads', type=int, default=4, help="num of threads")
