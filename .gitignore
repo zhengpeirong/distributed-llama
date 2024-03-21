@@ -1,6 +1,7 @@
 .vscode/settings.json
 result/*
 dllama/*
+test/*
 *.o
 *.dSYM
 *.data

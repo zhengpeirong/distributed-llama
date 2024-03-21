@@ -40,7 +40,7 @@ def test(args):
     master_command = ["nice", "-n", "-20", "./main", "inference",
                       "--model", "./model/{}.bin".format(
                           args.model), "--tokenizer", "./model/tokenizer.bin",
-                      "--weights-float-type", "q40", "--buffer-float-type", "q80",
+                      "--weights-float-type", "{}".format(args.weights_float), "--buffer-float-type", "{}".format(args.buffer_float),
                       "--prompt", "\"Hello world\"", "--steps", "{}".format(args.steps), "--nthreads", "{}".format(args.threads)]
 
     if len(args.works) != 0:
@@ -96,10 +96,10 @@ def test(args):
 
 
 if __name__ == '__main__':
-    # Node1 192.168.1.1
-    # Node2 192.168.1.2
-    # Node3 192.168.1.3
-    # Node4 192.168.1.4
+    # Node1 192.168.1.11
+    # Node2 192.168.1.12
+    # Node3 192.168.1.13
+    # Node4 192.168.1.14
 
     parser = argparse.ArgumentParser()
 
@@ -117,10 +117,12 @@ if __name__ == '__main__':
 
 ## 其他设定
     parser.add_argument('--threads', type=int, default=4, help="num of threads")
-    parser.add_argument('--steps', type=int, default=64,help="num of generated tokens")
+    parser.add_argument('--steps', type=int, default=256,help="num of generated tokens")
     parser.add_argument('--model', type=str, default="dllama_llama-2-7b_q40", help="the model")
-    parser.add_argument('--warm_up', type=int, default=2)
-    parser.add_argument('--loop', type=int, default=10)
+    parser.add_argument('--weights_float', type=str, default="q40", help="the weights float")
+    parser.add_argument('--buffer_float', type=str, default="q80", help="the buffer float")
+    parser.add_argument('--warm_up', type=int, default=1)
+    parser.add_argument('--loop', type=int, default=2)
 
     args = parser.parse_args()
 

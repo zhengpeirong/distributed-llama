@@ -158,6 +158,14 @@ sudo nice -n -20 ./main inference --model ./model/dllama_llama-2-7b_q40.bin --to
 ```sh
 sudo nice -n -20 ./main inference --model ./model/dllama_stories42M.bin --tokenizer ./model/tokenizer.bin --weights-float-type f32 --buffer-float-type f32 --prompt "Hello world" --steps 64 --nthreads 4
 ```
+15. 用sudo执行脚本
+```sh
+sudo ~/distributed-llama/dllama/bin/python test_latency.py 
+```
+16. 用sudo脚本测试小模型
+```sh
+sudo ~/distributed-llama/dllama/bin/python test_latency.py --model "dllama_stories42M" --weights_float f32 --buffer_float f32
+```
 To add more worker nodes, just add more addresses to the `--workers` argument.
 
 ```
