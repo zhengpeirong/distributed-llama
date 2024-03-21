@@ -19,7 +19,7 @@ def execute(args, master_command, worker_command, test_id=-1):
             save_log_without_stdout = partial(save_log, save_path=os.path.join(
                 args.save_folder, "worker_{}.log".format(worker_ip)), test_id=test_id)
             pool.apply_async(ssh_worker_execmd, args=(
-                worker_ip, 22, "root", "raspberrypi", worker_command), callback=save_log_without_stdout)
+                worker_ip, 22, "root", "raspberry", worker_command), callback=save_log_without_stdout)
         pool.close()
 
         # Prevent ssh execution from not finishing
@@ -48,7 +48,7 @@ def test(args):
         for work_ip in args.works:
             master_command.append("{}:9998".format(work_ip))
 
-    worker_command = "nice -n -20 /root/distributed-llama/main worker --port 9998 --nthreads {}".format(
+    worker_command = "nice -n -20 /home/pi//distributed-llama/main worker --port 9998 --nthreads {}".format(
         args.threads)
 
     print(" ".join(master_command))
