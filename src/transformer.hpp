@@ -5,12 +5,14 @@
 #include <cstdint>
 #include "quants.hpp"
 #include "socket.hpp"
-
+#include <vector>
 class MatmulSlice {
 public:
     FloatType type;
     int nSlices;
     int d0;
+    std::vector<int> d_sliced;
+    std::vector<int> d_index;
     int n;
     size_t bytes;
     size_t sliceBytes;

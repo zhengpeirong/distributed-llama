@@ -48,7 +48,8 @@ MatmulSlice::MatmulSlice(FloatType type, int nSlices, int n, int d) {
     std::vector<int> d_index = result.second;
     this->d_sliced = d_sliced;
     this->d_index = d_index;
-    this->sliceBytes = getBatchBytes(type, this->n, this->d_sliced[sliceIndex]);
+    // FIXME: 暂时用root节点的slice
+    this->sliceBytes = getBatchBytes(type, this->n, this->d_sliced[0]);
 }
 
 /*将d按照比例划分，d_sliced代表每个slice对应的长度；d_index代表每个slice对应的index
