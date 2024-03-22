@@ -42,7 +42,7 @@ MatmulSlice::MatmulSlice(FloatType type, int nSlices, int n, int d) {
         comp_weight.push_back(std::vector<int>(i, i));
     }
     
-    comp_weight[1] = {1,2};
+    // comp_weight[1] = {1,2};
     std::pair<std::vector<int>, std::vector<int>> result = slicedDArray(nSlices, d, comp_weight[nSlices-1]);
     std::vector<int> d_sliced = result.first;
     std::vector<int> d_index = result.second;
