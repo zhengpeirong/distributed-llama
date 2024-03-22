@@ -23,6 +23,19 @@ int getNumbersPerBatch(FloatType type) {
     exit(EXIT_FAILURE);
 }
 
+/*该函数根据给定的浮点数类型、n值和d值计算批量数据的字节数。以下是对函数的总结：
+
+函数签名：long getBatchBytes(FloatType type, int n, int d)
+参数：
+type：表示浮点数类型，为FloatType枚举类型。
+n：表示n值，为整数类型。
+d：表示d值，为整数类型。
+返回值：返回一个long类型的值，表示批量数据的字节数。
+函数逻辑：
+使用switch语句根据给定的浮点数类型type进行不同的处理。
+对于不同的浮点数类型，计算批量数据的字节数，并根据类型使用不同的数据类型大小（sizeof）进行计算。
+对于浮点数类型Q40和Q80，还会进行额外的断言检查，确保n值能够被相应的常量QK40和QK80整除。
+如果给定的浮点数类型不被支持，将打印错误信息并终止程序。*/
 long getBatchBytes(FloatType type, int n, int d) {
     switch (type) {
         case F32:
