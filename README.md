@@ -159,6 +159,7 @@ sudo nice -n -20 ./main inference --model ./model/dllama_llama-2-7b_q40.bin --to
 sudo nice -n -20 ./main inference --model ./model/dllama_stories42M.bin --tokenizer ./model/tokenizer.bin --weights-float-type f32 --buffer-float-type f32 --prompt "Hello world" --steps 64 --nthreads 4
 ```
 15. 用sudo执行脚本
+注：首先要创建虚拟环境，用venv，然后再用这个环境下的python来运行。
 ```sh
 sudo ~/distributed-llama/dllama/bin/python test_latency.py 
 ```
