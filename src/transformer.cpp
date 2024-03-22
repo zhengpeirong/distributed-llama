@@ -9,30 +9,114 @@
 #include "transformer.hpp"
 #include <unistd.h>
 #include <stdexcept>
-
 #define ALLOC_WEIGHTS true
 #define IS_ROOT_SLICE(sliceIndex) (sliceIndex == 0)
 
+// 声明沿着d维度分割矩阵的函数
+std::pair<std::vector<int>, std::vector<int>> slicedDArray(int slice, int d, const std::vector<int>& weights);
+
+/*MatmulSlice类：这是一个类的构造函数，接受四个参数：type（FloatType类型，表示浮点数类型），nSlices（int类型，表示切片的数量），n（int类型，表示n值），d（int类型，表示d值）。
+构造函数中使用assert宏来确保d能够被nSlices整除。如果断言条件不满足，则会触发断言失败。
+构造函数将传入的参数赋值给类的成员变量。
+d0成员变量被计算为d除以nSlices的结果。
+bytes成员变量通过调用getBatchBytes函数计算得到，该函数用于计算批量数据的字节数，传入的参数为type、n和d。
+sliceBytes成员变量通过调用getBatchBytes函数计算得到，该函数用于计算批量数据的字节数，传入的参数为type、n和d0。*/
 MatmulSlice::MatmulSlice(FloatType type, int nSlices, int n, int d) {
-    assert(d % nSlices == 0);
+    // assert(d % nSlices == 0);
 
     this->type = type;
     this->nSlices = nSlices;
-    this->d0 = d / nSlices;
     this->n = n;
     this->bytes = getBatchBytes(type, this->n, d);
-    this->sliceBytes = getBatchBytes(type, this->n, this->d0);
+    this->d0 = d / nSlices;
+    // 计算异构的比例区别
+    // comp_weight ={{2,2},{4,4,4,4},{8,8,8,8,8,8,8,8}} ;
+    std::vector<std::vector<int>> comp_weight;
+    /*comp_weight的值：
+        1 
+        2 2 
+        3 3 3 
+        4 4 4 4 
+    */
+    for (int i = 1; i <= nSlices; i++) {
+        comp_weight.push_back(std::vector<int>(i, i));
+    }
+    
+    // comp_weight[1] = {1,2};
+    std::pair<std::vector<int>, std::vector<int>> result = slicedDArray(nSlices, d, comp_weight[nSlices-1]);
+    std::vector<int> d_sliced = result.first;
+    std::vector<int> d_index = result.second;
+    this->d_sliced = d_sliced;
+    this->d_index = d_index;
+    this->sliceBytes = getBatchBytes(type, this->n, this->d_sliced[sliceIndex]);
 }
 
+/*将d按照比例划分，d_sliced代表每个slice对应的长度；d_index代表每个slice对应的index
+this->d0 * sliceIndex 对应 d_index[sliceIndex]，代表起点的index；
+this->d0 对应于 d_sliced[sliceIndex]，代表长度；
+*/
+std::pair<std::vector<int>, std::vector<int>> slicedDArray(int slice, int d, const std::vector<int>& weights = {}) {
+    std::vector<int> d_sliced;
+    int totalWeights = 0;
+    d_sliced.resize(slice);
+
+    if (weights.empty()) {
+        // 如果权重数组为空，则将默认权重设置为slice
+        for (int i = 0; i < slice; i++) {
+            d_sliced[i] = int(d / slice);
+        }
+    } else {
+        // 如果权重数组不为空，则使用提供的权重
+        for (int weight : weights) {
+            totalWeights += weight;
+        }
+
+        for (int i = 0; i < slice; i++) {
+            d_sliced[i] = int(d * weights[i] / totalWeights);
+        }
+    }
+
+    std::vector<int> d_index;
+    int current_d_index = 0;
+    d_index.resize(slice);
+
+    for (int i = 1; i < slice ; i++) {
+        d_index[i] = current_d_index + d_sliced[i-1];
+        current_d_index += d_sliced[i-1];
+    }
+
+    d_sliced[slice-1] = d - current_d_index;
+
+    return std::make_pair(d_sliced, d_index);
+}
+
+/*以上是MatmulSlice类的一个成员函数splitWeights的定义。该函数用于拆分权重数据，并将切片后的数据拷贝到指定的内存位置。以下是对函数的总结：
+
+函数签名：size_t MatmulSlice::splitWeights(uint8_t sliceIndex, char* weights, char* weights0)
+参数：
+sliceIndex：表示切片索引，为uint8_t类型，用于指定要拆分的切片索引。
+weights：表示原始权重数据的指针，为char*类型。
+weights0：表示拆分后的权重数据的指针，为char*类型。
+返回值：返回一个size_t类型的值，表示拷贝的字节数。
+函数逻辑：
+首先，根据权重数据的类型，调用getNumbersPerBatch函数获取每个批次的数据量，以及调用getBatchBytes函数获取每个批次的字节数。
+计算切片后的权重数据的偏移量，通过乘以切片索引、切片大小、批次数据量和每个批次的字节数来计算。
+初始化变量copiedBytes为0，用于记录拷贝的字节数。
+使用嵌套循环遍历切片中的每个权重数据：
+外层循环迭代变量d表示切片中的权重索引。
+内层循环迭代变量j表示切片中的批次索引。
+计算当前权重数据的偏移量o，通过乘以权重索引、每个批次的批次索引和每个批次的字节数来计算。
+使用memcpy函数将原始权重数据中的对应数据拷贝到拆分后的权重数据中，并根据每个批次的字节数增加copiedBytes。
+返回copiedBytes，表示拷贝的字节数。*/
 size_t MatmulSlice::splitWeights(uint8_t sliceIndex, char* weights, char* weights0) {
     int numbersPerBatch = getNumbersPerBatch(this->type);
     int batchBytes = getBatchBytes(this->type, numbersPerBatch, 1);
 
     int n = this->n / numbersPerBatch;
-    size_t offset = this->d0 * sliceIndex * n * batchBytes;
+    size_t offset = d_index[sliceIndex] * n * batchBytes;
     size_t copiedBytes = 0;
 
-    for (int d = 0; d < this->d0; d++) {
+    for (int d = 0; d < d_sliced[sliceIndex]; d++) {
         for (int j = 0; j < n; j++) {
             long o = (d * n + j) * batchBytes;
 
@@ -43,9 +127,21 @@ size_t MatmulSlice::splitWeights(uint8_t sliceIndex, char* weights, char* weight
     return copiedBytes;
 }
 
+/*函数签名：long MatmulSlice::mergeOutputs(uint8_t sliceIndex, float* output, float* output0)
+参数：
+sliceIndex：表示切片索引，为uint8_t类型，用于指定要合并的切片索引。
+output：表示合并后的输出数据的指针，为float*类型。
+output0：表示切片的输出数据的指针，为float*类型。
+返回值：返回一个long类型的值，表示合并后的偏移量（以float为单位）。
+函数逻辑：
+计算切片的偏移量，通过乘以切片索引和切片大小来计算。
+使用循环遍历切片的输出数据：
+循环迭代变量i表示切片中的输出索引。
+将切片的输出数据output0[i]赋值给合并后的输出数据output[offset + i]。
+返回合并后的偏移量offset（以float为单位）。*/
 long MatmulSlice::mergeOutputs(uint8_t sliceIndex, float* output, float* output0) {
-    long offset = this->d0 * sliceIndex;
-    for (int i = 0; i < this->d0; i++) {
+    long offset = d_index[sliceIndex];
+    for (int i = 0; i < d_sliced[sliceIndex]; i++) {
         output[offset + i] = output0[i];
     }
     return offset; // offset in floats
