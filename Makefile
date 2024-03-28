@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Werror -O3 -march=native -mtune=native
+CXXFLAGS = -std=c++11 -Werror -O3 -march=native -mtune=native -g
 
 utils: src/utils.cpp
 	$(CXX) $(CXXFLAGS) -c src/utils.cpp -o utils.o
@@ -26,6 +26,7 @@ main: src/main.cpp utils quants funcs socket transformer tasks llama2-tasks grok
 	$(CXX) $(CXXFLAGS) src/main.cpp -o main utils.o quants.o funcs.o socket.o transformer.o tasks.o llama2-tasks.o grok1-tasks.o mixtral-tasks.o tokenizer.o -lpthread
 quants-test: src/quants.cpp utils quants
 	$(CXX) $(CXXFLAGS) src/quants-test.cpp -o quants-test utils.o quants.o -lpthread
+<<<<<<< HEAD
 llama2-tasks-test: src/llama2-tasks-test.cpp utils quants funcs socket transformer tasks llama2-tasks tokenizer
 	$(CXX) $(CXXFLAGS) src/llama2-tasks-test.cpp -o llama2-tasks-test utils.o quants.o funcs.o socket.o transformer.o tasks.o llama2-tasks.o tokenizer.o -lpthread
 grok1-tasks-test: src/grok1-tasks-test.cpp utils quants funcs socket transformer tasks llama2-tasks grok1-tasks tokenizer

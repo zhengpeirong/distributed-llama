@@ -9,6 +9,7 @@
 #include "transformer.hpp"
 #include <unistd.h>
 #include <stdexcept>
+#include <vector>
 #define ALLOC_WEIGHTS true
 #define IS_ROOT_SLICE(sliceIndex) (sliceIndex == 0)
 

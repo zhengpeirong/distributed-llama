@@ -167,6 +167,14 @@ sudo ~/distributed-llama/dllama/bin/python test_latency.py
 ```sh
 sudo ~/distributed-llama/dllama/bin/python test_latency.py --model "dllama_stories42M" --weights_float f32 --buffer_float f32
 ```
+17. debug代码，先`sudo su`，再用小模型
+```
+gdbserver :1234 nice -n -20 ./main inference --model ./model/dllama_stories42M.bin --tokenizer ./model/tokenizer.bin --weights-float-type f32 --buffer-float-type f32 --prompt "Hello world" --steps 64 --nthreads 4
+```
+17. debug代码
+```
+gdbserver :1234 nice -n -20 ./main inference --model ./model/dllama_llama-2-7b_q40.bin --tokenizer ./model/tokenizer.bin --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 64 --nthreads 4
+```
 To add more worker nodes, just add more addresses to the `--workers` argument.
 
 ```
