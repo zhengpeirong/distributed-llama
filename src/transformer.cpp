@@ -22,7 +22,7 @@ std::pair<std::vector<int>, std::vector<int>> slicedDArray(int slice, int d, con
 d0成员变量被计算为d除以nSlices的结果。
 bytes成员变量通过调用getBatchBytes函数计算得到，该函数用于计算批量数据的字节数，传入的参数为type、n和d。
 sliceBytes成员变量通过调用getBatchBytes函数计算得到，该函数用于计算批量数据的字节数，传入的参数为type、n和d0。*/
-MatmulSlice::MatmulSlice(FloatType type, int nSlices, int n, int d) {
+MatmulSlice::MatmulSlice(FloatType type, int nSlices, int n, int d, uint8_t sliceIndex=0) {
     // assert(d % nSlices == 0);
 
     this->type = type;
@@ -50,7 +50,7 @@ MatmulSlice::MatmulSlice(FloatType type, int nSlices, int n, int d) {
     this->d_sliced = d_sliced;
     this->d_index = d_index;
     // FIXME: 暂时用root节点的slice
-    this->sliceBytes = getBatchBytes(type, this->n, this->d_sliced[0]);
+    this->sliceBytes = getBatchBytes(type, this->n, this->d_sliced[sliceIndex]);
 }
 
 /*将d按照比例划分，d_sliced代表每个slice对应的长度；d_index代表每个slice对应的index
@@ -410,10 +410,11 @@ TransformerBlock::TransformerBlock(TransformerSpec* spec, uint8_t sliceIndex) {
         att = (float*)NEW_BUFFER(spec->nHeads * spec->seqLen * sizeof(float));
     }
 
-    q0Slice = new MatmulSlice(spec->weightsFloatType, spec->nSlices, spec->dim, spec->dim);
-    k0Slice = new MatmulSlice(spec->weightsFloatType, spec->nSlices, spec->dim, spec->kvDim);
-    v0Slice = new MatmulSlice(spec->weightsFloatType, spec->nSlices, spec->dim, spec->kvDim);
-    wo0Slice = new MatmulSlice(spec->weightsFloatType, spec->nSlices, spec->dim, spec->dim);
+
+    q0Slice = new MatmulSlice(spec->weightsFloatType, spec->nSlices, spec->dim, spec->dim, this->sliceIndex);
+    k0Slice = new MatmulSlice(spec->weightsFloatType, spec->nSlices, spec->dim, spec->kvDim, this->sliceIndex);
+    v0Slice = new MatmulSlice(spec->weightsFloatType, spec->nSlices, spec->dim, spec->kvDim, this->sliceIndex);
+    wo0Slice = new MatmulSlice(spec->weightsFloatType, spec->nSlices, spec->dim, spec->dim, this->sliceIndex);
 
 #if ALLOC_WEIGHTS
     q0 = NEW_BUFFER(q0Slice->sliceBytes);

@@ -17,7 +17,7 @@ public:
     size_t bytes;
     size_t sliceBytes;
 
-    MatmulSlice(FloatType type, int nSlices, int n, int d);
+    MatmulSlice(FloatType type, int nSlices, int n, int d, uint8_t sliceIndex);
     size_t splitWeights(uint8_t sliceIndex, char* weights, char* weights0);
     long mergeOutputs(uint8_t sliceIndex, float* output, float* output0);
 };
