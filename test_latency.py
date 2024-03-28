@@ -109,11 +109,14 @@ if __name__ == '__main__':
     # parser.add_argument('--test_name', type=str, default="1RaspberryPi", help="the name of test")
     # parser.add_argument('--works', type=list, default=[], help="the ip of workers")
 
-    # parser.add_argument('--test_name', type=str, default="2RaspberryPi", help="the name of test")
-    # parser.add_argument('--works', type=list, default=["192.168.1.11"], help="the ip of workers")
+    parser.add_argument('--test_name', type=str, default="2RaspberryPi", help="the name of test")
+    parser.add_argument('--works', type=list, default=["192.168.1.11"], help="the ip of workers")
 
-    parser.add_argument('--test_name', type=str, default="4RaspberryPi", help="the name of test")
-    parser.add_argument('--works', type=list, default=["192.168.1.11", "192.168.1.12", "192.168.1.13"], help="the ip of workers")
+    # parser.add_argument('--test_name', type=str, default="3RaspberryPi", help="the name of test")
+    # parser.add_argument('--works', type=list, default=["192.168.1.11", "192.168.1.12"], help="the ip of workers")
+
+    # parser.add_argument('--test_name', type=str, default="4RaspberryPi", help="the name of test")
+    # parser.add_argument('--works', type=list, default=["192.168.1.11", "192.168.1.12", "192.168.1.13"], help="the ip of workers")
 
 ## 其他设定
     parser.add_argument('--threads', type=int, default=4, help="num of threads")
@@ -122,7 +125,7 @@ if __name__ == '__main__':
     parser.add_argument('--weights_float', type=str, default="q40", help="the weights float")
     parser.add_argument('--buffer_float', type=str, default="q80", help="the buffer float")
     parser.add_argument('--warm_up', type=int, default=1)
-    parser.add_argument('--loop', type=int, default=2)
+    parser.add_argument('--loop', type=int, default=10)
 
     args = parser.parse_args()
 
