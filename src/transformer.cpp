@@ -327,6 +327,7 @@ char* TransformerBuffer::getSliced(uint8_t bufferIndex, uint8_t sliceIndex) {
 
 size_t TransformerBuffer::getSlicedBytes(uint8_t bufferIndex) {
     return bufferBytes[bufferIndex] / nSlices;
+//    BUG 这返回值需要修改
 }
 /*这是 Transformer 类的构造函数实现。它接受两个参数:一个 TransformerSpec 指针,它包含 Transformer 模型的配置信息;以及一个 sliceIndex,用于标识是构造主机端还是设备端的实例。
 

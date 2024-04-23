@@ -1,4 +1,4 @@
-![Distributed Llama](.github/cover.png)
+ ![Distributed Llama](.github/cover.png)
 
 # Distributed Llama
 
