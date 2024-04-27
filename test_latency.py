@@ -39,9 +39,10 @@ def execute(args, master_command, worker_command, test_id=-1):
 def test(args):
     master_command = ["nice", "-n", "-20", "./main", "inference",
                       "--model", "./model/{}.bin".format(
-                          args.model), "--tokenizer", "./model/tokenizer.bin",
+                          args.model), "--tokenizer", "./model/dllama-llama3-tokenizer.t",
                       "--weights-float-type", "{}".format(args.weights_float), "--buffer-float-type", "{}".format(args.buffer_float),
                       "--prompt", "\"Hello world\"", "--steps", "{}".format(args.steps), "--nthreads", "{}".format(args.threads)]
+# sudo nice -n -20 ./main inference --weights-float-type q40 --buffer-float-type q80 --prompt "My name is" --steps 128 --nthreads 8 --model model/dllama_meta-llama-3-8b_q40.bin --tokenizer model/dllama-llama3-tokenizer.t
 
     if len(args.works) != 0:
         master_command.append("--workers")
@@ -106,11 +107,11 @@ if __name__ == '__main__':
 ## test name和works设定
 
 
-    # parser.add_argument('--test_name', type=str, default="1RaspberryPi", help="the name of test")
-    # parser.add_argument('--works', type=list, default=[], help="the ip of workers")
+    parser.add_argument('--test_name', type=str, default="WSL", help="the name of test")
+    parser.add_argument('--works', type=list, default=[], help="the ip of workers")
 
-    parser.add_argument('--test_name', type=str, default="2RaspberryPi", help="the name of test")
-    parser.add_argument('--works', type=list, default=["192.168.1.11"], help="the ip of workers")
+    # parser.add_argument('--test_name', type=str, default="2RaspberryPi", help="the name of test")
+    # parser.add_argument('--works', type=list, default=["192.168.1.11"], help="the ip of workers")
 
     # parser.add_argument('--test_name', type=str, default="3RaspberryPi", help="the name of test")
     # parser.add_argument('--works', type=list, default=["192.168.1.11", "192.168.1.12"], help="the ip of workers")
@@ -121,7 +122,7 @@ if __name__ == '__main__':
 ## 其他设定
     parser.add_argument('--threads', type=int, default=4, help="num of threads")
     parser.add_argument('--steps', type=int, default=256,help="num of generated tokens")
-    parser.add_argument('--model', type=str, default="dllama_llama-2-7b_q40", help="the model")
+    parser.add_argument('--model', type=str, default="dllama_meta-llama-3-8b_q40", help="the model")
     parser.add_argument('--weights_float', type=str, default="q40", help="the weights float")
     parser.add_argument('--buffer_float', type=str, default="q80", help="the buffer float")
     parser.add_argument('--warm_up', type=int, default=1)

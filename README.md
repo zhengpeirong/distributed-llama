@@ -148,16 +148,20 @@ sudo nice -n -20 ./main inference --model ../dllama_llama-2-7b_q40.bin --tokeniz
 ```
 12. 用q40的llama
 ```sh
-sudo nice -n -20 ./main inference --model ./model/dllama_llama-2-7b_q40.bin --tokenizer ./model/tokenizer.bin --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 64 --nthreads 4 --workers 192.168.1.11:9998 192.168.1.12:9998 192.168.1.13:9998
+sudo nice -n -20 ./main inference --model ./model/dllama_llama-2-7b_q40.bin --tokenizer ./model/dllama-llama2-tokenizer.t --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 64 --nthreads 4 --workers 192.168.1.11:9998 192.168.1.12:9998 192.168.1.13:9998
 ```
 13. 单独主节点
 ```sh
-sudo nice -n -20 ./main inference --model ./model/dllama_llama-2-7b_q40.bin --tokenizer ./model/tokenizer.bin --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 64 --nthreads 4
+sudo nice -n -20 ./main inference --model ./model/dllama_llama-2-7b_q40.bin --tokenizer ./model/dllama-llama2-tokenizer.t --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 64 --nthreads 4
 ```
-14. 用小模型测试
-```sh
-sudo nice -n -20 ./main inference --model ./model/dllama_stories42M.bin --tokenizer ./model/tokenizer.bin --weights-float-type f32 --buffer-float-type f32 --prompt "Hello world" --steps 64 --nthreads 4
-```
+
+[//]: # (14. 用小模型测试)
+
+[//]: # (```sh)
+
+[//]: # (sudo nice -n -20 ./main inference --model ./model/dllama_stories42M.bin --tokenizer ./model/dllama-llama2-tokenizer.t --weights-float-type f32 --buffer-float-type f32 --prompt "Hello world" --steps 64 --nthreads 4)
+
+[//]: # (```)
 15. 用sudo执行脚本
 注：首先要创建虚拟环境，用venv，然后再用这个环境下的python来运行。
 ```sh
@@ -171,10 +175,18 @@ sudo ~/distributed-llama/dllama/bin/python test_latency.py --model "dllama_stori
 ```
 gdbserver :1234 nice -n -20 ./main inference --model ./model/dllama_stories42M.bin --tokenizer ./model/tokenizer.bin --weights-float-type f32 --buffer-float-type f32 --prompt "Hello world" --steps 64 --nthreads 4
 ```
-17. debug代码
+18. debug代码，用llama-2
 ```
-gdbserver :1234 nice -n -20 ./main inference --model ./model/dllama_llama-2-7b_q40.bin --tokenizer ./model/tokenizer.bin --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 64 --nthreads 4
+gdbserver :1234 nice -n -20 ./main inference --model ./model/dllama_llama-2-7b_q40.bin --tokenizer ./model/dllama-llama2-tokenizer.t --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 64 --nthreads 4
 ```
+
+19. llama3运行
+
+```shell
+./main inference --weights-float-type q40 --buffer-float-type q80 --prompt "My name is" --steps 128 --nthreads 8 --model model/dllama_meta-llama-3-8b_q40.bin --tokenizer model/dllama-llama3-tokenizer.t
+```
+
+
 To add more worker nodes, just add more addresses to the `--workers` argument.
 
 ```

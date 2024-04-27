@@ -365,231 +365,231 @@ int Sampler::sample(float* logits) {
 }
 
 
-void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPool, char* tokenizerPath, float temperature, float topp, int steps, char* prompt) {
-    unsigned long long rngSeed = (unsigned int)time(NULL);
+//void generate(TransformerSpec* spec, Inference* inference, SocketPool* socketPool, char* tokenizerPath, float temperature, float topp, int steps, char* prompt) {
+//    unsigned long long rngSeed = (unsigned int)time(NULL);
+//
+//    Tokenizer tokenizer(tokenizerPath, spec->vocabSize);
+//    // 将最高Logits值的Token作为下一个生成的Token。
+//    Sampler sampler(spec->vocabSize, temperature, topp, rngSeed);
+//
+//    char emptyPrompt[] = "";
+//    if (prompt == NULL) { prompt = emptyPrompt; }
+//
+//     // 分词（Tokenization）：将原始文本拆分成词语或子序列的过程。这通常涉及到将文本分割成单词、标点符号或者其他语言单位的序列。例如，将句子 "I love natural language processing!" 分词后可能得到 ["I", "love", "natural", "language", "processing", "!"]。
+//    // 映射（Mapping）：将分词得到的符号映射到预定义的词汇表或者标记集合中。这个步骤将每个分词映射到一个唯一的标记（token）。通常使用一个词汇表来存储所有可能的token，并为每个token分配一个唯一的整数编号。例如，词汇表中的token "love" 可能被映射为编号 231。
+//    // 生成序列（Sequence Generation）：根据映射后的token编号，将原始文本转换成token序列。这个序列中的每个token都是一个整数，代表词汇表中的一个标记。例如，"I love natural language processing!" 可以被编码为 [45, 231, 76, 192, 956, 13]，其中每个数字代表词汇表中相应token的编号。
+//
+//    // encode the (string) prompt into tokens sequence
+//    int numPromptTokens = 0;
+//    int* promptTokens = (int*)malloc((strlen(prompt)+3) * sizeof(int)); // +3 for '\0', ?BOS, ?EOS
+//    // 获取prompt的token序列
+//    tokenizer.encode(prompt, 1, 0, promptTokens, &numPromptTokens);
+//    if (numPromptTokens < 1) {
+//        fprintf(stderr, "something is wrong, expected at least 1 prompt token\n");
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    // start the main loop
+//    long start = 0;  // used to time our code, only initialized after first iteration
+//    int next;        // will store the next token in the sequence
+//    int token = promptTokens[0]; // kick off with the first token in the prompt
+//    int pos = 0;     // position in the sequence
+//
+//    unsigned long inferenceTime;
+//    unsigned long transferTime;
+//    unsigned int NUM_TASKS = 32;
+//    unsigned long detailedTime[NUM_TASKS] = {0};
+//    size_t sentBytes;
+//    size_t recvBytes;
+//    unsigned long totalGenerationTime = 0;
+//    unsigned long totalInferenceTime = 0;
+//    unsigned long totalTransferTime = 0;
+//    unsigned long totalDetailedTime[NUM_TASKS] = {0};
+//    std::string generated_text = "" + *prompt;
+//    while (pos < steps) {
+//        unsigned long startTime = timeMs();
+//        // 执行推理，得到推理输出，模型输出的Logits：在生成Token序列时，LLM实际上会计算每个可能Token的Logits。这些Logits表示了模型对每个Token的预测分数。在生成过程中，LLM会选择具有最高Logits值的Token作为下一个生成的Token。
+//        float* logits = inference->infer(token, pos);
+//
+//        // inference->getStats(&inferenceTime, &transferTime);
+//        inference->getDetailedStats(&inferenceTime, &transferTime, detailedTime);
+//
+//        socketPool->getStats(&sentBytes, &recvBytes);
+//
+//        // 获取下一个token，next
+//        // advance the state machine
+//        if (pos < numPromptTokens - 1) {
+//            // if we are still processing the input prompt, force the next prompt token
+//            next = promptTokens[pos + 1];
+//        } else {
+//            // otherwise sample the next token from the logits
+//            next = sampler.sample(logits);
+//        }
+//        pos++;
+//
+//        unsigned long generationTime = timeMs() - startTime;
+//
+//        totalGenerationTime += generationTime;
+//        totalInferenceTime += inferenceTime;
+//        totalTransferTime += transferTime;
+//
+//        if (pos == 1) {
+//            for (unsigned int i = 0; i < NUM_TASKS; i++) {
+//                totalDetailedTime[i] = detailedTime[i];
+//            }
+//        } else {
+//            for (unsigned int i = 0; i < NUM_TASKS; i++) {
+//                totalDetailedTime[i] += detailedTime[i];
+//            }
+//        }
+//
+//        // data-dependent terminating condition: the BOS (=1) token delimits sequences
+//        if (next == 1) { break; }
+//
+//        // print the token as string, decode it with the Tokenizer object
+//        // 将token转为字符并打印，token为上一个，next为当前token
+//        char* piece = tokenizer.decode(token, next);
+//        generated_text += piece;
+//
+//        printf("🔶 G %4ld ms I %4ld ms T %4ld ms S %6ld kB R %6ld kB ", generationTime, inferenceTime, transferTime, sentBytes / 1024, recvBytes / 1024);
+//        // for (unsigned int i = 0; i < NUM_TASKS; i++) {
+//        //     printf("\ndetailedTime[%u]: %4ld ms", i, detailedTime[i]);
+//        // }
+//        safePrintf(piece); // same as printf("%s", piece), but skips "unsafe" bytes
+//        printf("\n");
+//        fflush(stdout);
+//        // 继续这个过程直到当前token即next的值为1即eos
+//        token = next;
+//    }
+//
+//    // 生成结束后，打印完整的生成文本
+//    printf("\nGenerated text:\n%s\n", generated_text.c_str());
+//    free(promptTokens);
+//
+//    unsigned long rootTime = 0;
+//    for (unsigned int i = 0; i < NUM_TASKS; i++) {
+//        printf("Avg detailed time[%u]: %.2f ms\n", i, totalDetailedTime[i] / (double)pos);
+//        if (std::set<int>({0, 1, 2, 7, 8, 9, 14, 15, 16, 17, 26, 27, 29, 30, 31}).count(i)) {
+//            rootTime += totalDetailedTime[i];
+//        };
+//    };
+//
+//    printf("Generated Tokens:    %d\n", pos);
+//    printf("Avg Generation Time: %.2f ms\n", totalGenerationTime / (double)pos);
+//    printf("Avg Inference Time:  %.2f ms\n", totalInferenceTime / (double)pos);
+//    printf("Avg Transfer Time:   %.2f ms\n", totalTransferTime / (double)pos);
+//    printf("Avg Serial Time:  %.2f ms\n", rootTime / (double)pos);
+//    printf("Avg Parallel Time:  %.2f ms\n", (totalInferenceTime - rootTime) / (double)pos);
+//
+//    // 保存输出内容
+//    std::string folderPath = "./result/";
+//
+//    // 创建文件
+//    std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+//    std::tm* now = std::localtime(&currentTime);
+//    std::ostringstream oss;
+//    oss << std::put_time(now, "%Y-%m-%d_%H-%M-%S");
+//    std::string csvFileName = folderPath + oss.str() + ".csv";
+//    std::ofstream logfile(csvFileName);
+//    // std::cout << csvFileName << std::endl;
+//    // 写入文件
+//    logfile << "Generated Tokens," << pos << std::endl;
+//    logfile << "Avg Generation Time," << totalGenerationTime / static_cast<double>(pos) << std::endl;
+//    logfile << "Avg Inference Time," << totalInferenceTime / static_cast<double>(pos) << std::endl;
+//    logfile << "Avg Transfer Time," << totalTransferTime / static_cast<double>(pos) << std::endl;
+//    logfile << "Avg Serial Time," << rootTime / static_cast<double>(pos) << std::endl;
+//    logfile << "Avg Parallel Time," << (totalInferenceTime - rootTime) / static_cast<double>(pos) << std::endl;
+//    logfile << "Task Index, Avg Detailed Time" << std::endl;
+//    for (unsigned int i = 0; i < NUM_TASKS; i++) {
+//        logfile << i << "," << totalDetailedTime[i] / static_cast<double>(pos) << std::endl;
+//    }
+//
+//    // TODO: 将这些信息一并保存(TransformerSpec* spec, Inference* inference, SocketPool* socketPool, char* tokenizerPath, float temperature, float topp, int steps, char* prompt)
+//    // 保存文件
+//    logfile.close();
+//}
 
-    Tokenizer tokenizer(tokenizerPath, spec->vocabSize);
-    // 将最高Logits值的Token作为下一个生成的Token。
-    Sampler sampler(spec->vocabSize, temperature, topp, rngSeed);
 
-    char emptyPrompt[] = "";
-    if (prompt == NULL) { prompt = emptyPrompt; }
-
-     // 分词（Tokenization）：将原始文本拆分成词语或子序列的过程。这通常涉及到将文本分割成单词、标点符号或者其他语言单位的序列。例如，将句子 "I love natural language processing!" 分词后可能得到 ["I", "love", "natural", "language", "processing", "!"]。
-    // 映射（Mapping）：将分词得到的符号映射到预定义的词汇表或者标记集合中。这个步骤将每个分词映射到一个唯一的标记（token）。通常使用一个词汇表来存储所有可能的token，并为每个token分配一个唯一的整数编号。例如，词汇表中的token "love" 可能被映射为编号 231。
-    // 生成序列（Sequence Generation）：根据映射后的token编号，将原始文本转换成token序列。这个序列中的每个token都是一个整数，代表词汇表中的一个标记。例如，"I love natural language processing!" 可以被编码为 [45, 231, 76, 192, 956, 13]，其中每个数字代表词汇表中相应token的编号。
-
-    // encode the (string) prompt into tokens sequence
-    int numPromptTokens = 0;
-    int* promptTokens = (int*)malloc((strlen(prompt)+3) * sizeof(int)); // +3 for '\0', ?BOS, ?EOS
-    // 获取prompt的token序列
-    tokenizer.encode(prompt, 1, 0, promptTokens, &numPromptTokens);
-    if (numPromptTokens < 1) {
-        fprintf(stderr, "something is wrong, expected at least 1 prompt token\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // start the main loop
-    long start = 0;  // used to time our code, only initialized after first iteration
-    int next;        // will store the next token in the sequence
-    int token = promptTokens[0]; // kick off with the first token in the prompt
-    int pos = 0;     // position in the sequence
-
-    unsigned long inferenceTime;
-    unsigned long transferTime;
-    unsigned int NUM_TASKS = 32;
-    unsigned long detailedTime[NUM_TASKS] = {0};
-    size_t sentBytes;
-    size_t recvBytes;
-    unsigned long totalGenerationTime = 0;
-    unsigned long totalInferenceTime = 0;
-    unsigned long totalTransferTime = 0;
-    unsigned long totalDetailedTime[NUM_TASKS] = {0};
-    std::string generated_text = "" + *prompt;
-    while (pos < steps) {
-        unsigned long startTime = timeMs();
-        // 执行推理，得到推理输出，模型输出的Logits：在生成Token序列时，LLM实际上会计算每个可能Token的Logits。这些Logits表示了模型对每个Token的预测分数。在生成过程中，LLM会选择具有最高Logits值的Token作为下一个生成的Token。
-        float* logits = inference->infer(token, pos);
-
-        // inference->getStats(&inferenceTime, &transferTime);
-        inference->getDetailedStats(&inferenceTime, &transferTime, detailedTime);
-
-        socketPool->getStats(&sentBytes, &recvBytes);
-
-        // 获取下一个token，next
-        // advance the state machine
-        if (pos < numPromptTokens - 1) {
-            // if we are still processing the input prompt, force the next prompt token
-            next = promptTokens[pos + 1];
-        } else {
-            // otherwise sample the next token from the logits
-            next = sampler.sample(logits);
-        }
-        pos++;
-
-        unsigned long generationTime = timeMs() - startTime;
-
-        totalGenerationTime += generationTime;
-        totalInferenceTime += inferenceTime;
-        totalTransferTime += transferTime;
-
-        if (pos == 1) {
-            for (unsigned int i = 0; i < NUM_TASKS; i++) {
-                totalDetailedTime[i] = detailedTime[i];
-            }
-        } else {
-            for (unsigned int i = 0; i < NUM_TASKS; i++) {
-                totalDetailedTime[i] += detailedTime[i];
-            }
-        }
-
-        // data-dependent terminating condition: the BOS (=1) token delimits sequences
-        if (next == 1) { break; }
-
-        // print the token as string, decode it with the Tokenizer object
-        // 将token转为字符并打印，token为上一个，next为当前token
-        char* piece = tokenizer.decode(token, next);
-        generated_text += piece;
-
-        printf("🔶 G %4ld ms I %4ld ms T %4ld ms S %6ld kB R %6ld kB ", generationTime, inferenceTime, transferTime, sentBytes / 1024, recvBytes / 1024);
-        // for (unsigned int i = 0; i < NUM_TASKS; i++) {
-        //     printf("\ndetailedTime[%u]: %4ld ms", i, detailedTime[i]);
-        // }
-        safePrintf(piece); // same as printf("%s", piece), but skips "unsafe" bytes
-        printf("\n");
-        fflush(stdout);
-        // 继续这个过程直到当前token即next的值为1即eos
-        token = next;
-    }
-
-    // 生成结束后，打印完整的生成文本
-    printf("\nGenerated text:\n%s\n", generated_text.c_str());
-    free(promptTokens);
-
-    unsigned long rootTime = 0;
-    for (unsigned int i = 0; i < NUM_TASKS; i++) {
-        printf("Avg detailed time[%u]: %.2f ms\n", i, totalDetailedTime[i] / (double)pos);
-        if (std::set<int>({0, 1, 2, 7, 8, 9, 14, 15, 16, 17, 26, 27, 29, 30, 31}).count(i)) {
-            rootTime += totalDetailedTime[i];
-        };
-    };
-
-    printf("Generated Tokens:    %d\n", pos);
-    printf("Avg Generation Time: %.2f ms\n", totalGenerationTime / (double)pos);
-    printf("Avg Inference Time:  %.2f ms\n", totalInferenceTime / (double)pos);
-    printf("Avg Transfer Time:   %.2f ms\n", totalTransferTime / (double)pos);
-    printf("Avg Serial Time:  %.2f ms\n", rootTime / (double)pos);
-    printf("Avg Parallel Time:  %.2f ms\n", (totalInferenceTime - rootTime) / (double)pos);
-
-    // 保存输出内容
-    std::string folderPath = "./result/";
-
-    // 创建文件
-    std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::tm* now = std::localtime(&currentTime);
-    std::ostringstream oss;
-    oss << std::put_time(now, "%Y-%m-%d_%H-%M-%S");
-    std::string csvFileName = folderPath + oss.str() + ".csv";
-    std::ofstream logfile(csvFileName);
-    // std::cout << csvFileName << std::endl;
-    // 写入文件
-    logfile << "Generated Tokens," << pos << std::endl;
-    logfile << "Avg Generation Time," << totalGenerationTime / static_cast<double>(pos) << std::endl;
-    logfile << "Avg Inference Time," << totalInferenceTime / static_cast<double>(pos) << std::endl;
-    logfile << "Avg Transfer Time," << totalTransferTime / static_cast<double>(pos) << std::endl;
-    logfile << "Avg Serial Time," << rootTime / static_cast<double>(pos) << std::endl;
-    logfile << "Avg Parallel Time," << (totalInferenceTime - rootTime) / static_cast<double>(pos) << std::endl;
-    logfile << "Task Index, Avg Detailed Time" << std::endl;
-    for (unsigned int i = 0; i < NUM_TASKS; i++) {
-        logfile << i << "," << totalDetailedTime[i] / static_cast<double>(pos) << std::endl;
-    }
-
-    // TODO: 将这些信息一并保存(TransformerSpec* spec, Inference* inference, SocketPool* socketPool, char* tokenizerPath, float temperature, float topp, int steps, char* prompt)
-    // 保存文件
-    logfile.close();
-}
-
-
-void chat(Inference* inference, Tokenizer *tokenizer, Sampler *sampler, char *cliUserPrompt, char *cliSystemPrompt, int steps) {
-    // buffers for reading the system prompt and user prompt from stdin
-    // you'll notice they are soomewhat haphazardly and unsafely set atm
-    char systemPrompt[512];
-    char userPrompt[512];
-    const size_t renderedPromptSize = 1152;
-    char renderedPrompt[renderedPromptSize];
-    int numPromptTokens = 0;
-    int* promptTokens = (int*)malloc(1152 * sizeof(int));
-    int userIdx;
-
-    // start the main loop
-    int8_t userTurn = 1; // user starts
-    int next;        // will store the next token in the sequence
-    int token;       // stores the current token to feed into the transformer
-    int prev_token;
-    int pos = 0;     // position in the sequence
-    while (pos < steps) {
-        // when it is the user's turn to contribute tokens to the dialog...
-        if (userTurn) {
-            // get the (optional) system prompt at position 0
-            if (pos == 0) {
-                // at position 0, the user can also contribute a system prompt
-                if (cliSystemPrompt == NULL) {
-                    // system prompt was not passed in, attempt to get it from stdin
-                    readStdin("💻 Enter system prompt (optional): ", systemPrompt, sizeof(systemPrompt));
-                } else {
-                    // system prompt was passed in, use it
-                    strcpy(systemPrompt, cliSystemPrompt);
-                }
-            }
-            // get the user prompt
-            if (pos == 0 && cliUserPrompt != NULL) {
-                // user prompt for position 0 was passed in, use it
-                strcpy(userPrompt, cliUserPrompt);
-            } else {
-                // otherwise get user prompt from stdin
-                readStdin("👱 User: ", userPrompt, sizeof(userPrompt));
-            }
-            // render user/system prompts into the Llama 2 Chat schema
-            if (pos == 0 && systemPrompt[0] != '\0') {
-                char systemTemplate[] = "[INST] <<SYS>>\n%s\n<</SYS>>\n\n%s [/INST]";
-                snprintf(renderedPrompt, renderedPromptSize, systemTemplate, systemPrompt, userPrompt);
-            } else {
-                char userTemplate[] = "[INST] %s [/INST]";
-                snprintf(renderedPrompt, renderedPromptSize, userTemplate, userPrompt);
-            }
-            // encode the rendered prompt into tokens
-            tokenizer->encode(renderedPrompt, 1, 0, promptTokens, &numPromptTokens);
-            userIdx = 0; // reset the user index
-            userTurn = 0;
-            printf("🤖 Assistant: ");
-        }
-
-        // determine the token to pass into the transformer next
-        if (userIdx < numPromptTokens) {
-            // if we are still processing the input prompt, force the next prompt token
-            token = promptTokens[userIdx++];
-        } else {
-            // otherwise use the next token sampled from previous turn
-            token = next;
-        }
-        // EOS (=2) token ends the Assistant turn
-        if (token == 2) {
-            userTurn = 1;
-        }
-
-        // forward the transformer to get logits for the next token
-        float* logits = inference->infer(token, pos);
-        next = sampler->sample(logits);
-        pos++;
-
-        if (userIdx >= numPromptTokens && next != 2) {
-            // the Assistant is responding, so print its output
-            char* piece = tokenizer->decode(token, next);
-            safePrintf(piece); // same as printf("%s", piece), but skips "unsafe" bytes
-            fflush(stdout);
-        }
-        if (next == 2) { printf("\n"); }
-    }
-    printf("\n");
-    free(promptTokens);
-}
+//void chat(Inference* inference, Tokenizer *tokenizer, Sampler *sampler, char *cliUserPrompt, char *cliSystemPrompt, int steps) {
+//    // buffers for reading the system prompt and user prompt from stdin
+//    // you'll notice they are soomewhat haphazardly and unsafely set atm
+//    char systemPrompt[512];
+//    char userPrompt[512];
+//    const size_t renderedPromptSize = 1152;
+//    char renderedPrompt[renderedPromptSize];
+//    int numPromptTokens = 0;
+//    int* promptTokens = (int*)malloc(1152 * sizeof(int));
+//    int userIdx;
+//
+//    // start the main loop
+//    int8_t userTurn = 1; // user starts
+//    int next;        // will store the next token in the sequence
+//    int token;       // stores the current token to feed into the transformer
+//    int prev_token;
+//    int pos = 0;     // position in the sequence
+//    while (pos < steps) {
+//        // when it is the user's turn to contribute tokens to the dialog...
+//        if (userTurn) {
+//            // get the (optional) system prompt at position 0
+//            if (pos == 0) {
+//                // at position 0, the user can also contribute a system prompt
+//                if (cliSystemPrompt == NULL) {
+//                    // system prompt was not passed in, attempt to get it from stdin
+//                    readStdin("💻 Enter system prompt (optional): ", systemPrompt, sizeof(systemPrompt));
+//                } else {
+//                    // system prompt was passed in, use it
+//                    strcpy(systemPrompt, cliSystemPrompt);
+//                }
+//            }
+//            // get the user prompt
+//            if (pos == 0 && cliUserPrompt != NULL) {
+//                // user prompt for position 0 was passed in, use it
+//                strcpy(userPrompt, cliUserPrompt);
+//            } else {
+//                // otherwise get user prompt from stdin
+//                readStdin("👱 User: ", userPrompt, sizeof(userPrompt));
+//            }
+//            // render user/system prompts into the Llama 2 Chat schema
+//            if (pos == 0 && systemPrompt[0] != '\0') {
+//                char systemTemplate[] = "[INST] <<SYS>>\n%s\n<</SYS>>\n\n%s [/INST]";
+//                snprintf(renderedPrompt, renderedPromptSize, systemTemplate, systemPrompt, userPrompt);
+//            } else {
+//                char userTemplate[] = "[INST] %s [/INST]";
+//                snprintf(renderedPrompt, renderedPromptSize, userTemplate, userPrompt);
+//            }
+//            // encode the rendered prompt into tokens
+//            tokenizer->encode(renderedPrompt, 1, 0, promptTokens, &numPromptTokens);
+//            userIdx = 0; // reset the user index
+//            userTurn = 0;
+//            printf("🤖 Assistant: ");
+//        }
+//
+//        // determine the token to pass into the transformer next
+//        if (userIdx < numPromptTokens) {
+//            // if we are still processing the input prompt, force the next prompt token
+//            token = promptTokens[userIdx++];
+//        } else {
+//            // otherwise use the next token sampled from previous turn
+//            token = next;
+//        }
+//        // EOS (=2) token ends the Assistant turn
+//        if (token == 2) {
+//            userTurn = 1;
+//        }
+//
+//        // forward the transformer to get logits for the next token
+//        float* logits = inference->infer(token, pos);
+//        next = sampler->sample(logits);
+//        pos++;
+//
+//        if (userIdx >= numPromptTokens && next != 2) {
+//            // the Assistant is responding, so print its output
+//            char* piece = tokenizer->decode(token, next);
+//            safePrintf(piece); // same as printf("%s", piece), but skips "unsafe" bytes
+//            fflush(stdout);
+//        }
+//        if (next == 2) { printf("\n"); }
+//    }
+//    printf("\n");
+//    free(promptTokens);
+//}
