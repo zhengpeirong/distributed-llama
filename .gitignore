@@ -1,5 +1,5 @@
 .vscode/settings.json
-./test/legacy
+test/legacy
 dllama/
 model/
 .idea/
