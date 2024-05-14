@@ -1,5 +1,7 @@
 .vscode/settings.json
-
+./test/legacy
+dlllma/
+.idea/
 *.o
 *.dSYM
 *.data
