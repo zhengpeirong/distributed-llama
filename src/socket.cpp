@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include "socket.hpp"
 #include <stdexcept>
+#include "network_utils.hpp"
+#include "utils.hpp"
 
 #define SOCKET_LAST_ERRCODE errno
 #define SOCKET_LAST_ERROR strerror(errno)
@@ -36,7 +38,7 @@ static inline void setNoDelay(int socket) {
 
 static inline void writeSocket(int socket, const void* data, size_t size) {
     while (size > 0) {
-        int s = send(socket, (char*)data, size, 0);
+        int s = send_with_info(socket, (char*)data, size, 0);
         if (s < 0) {
             if (SOCKET_LAST_ERRCODE == EAGAIN) {
                 continue;
@@ -46,10 +48,16 @@ static inline void writeSocket(int socket, const void* data, size_t size) {
             throw WriteSocketException(0, "Socket closed");
         }
         size -= s;
-        data = (char*)data + s;
+        data = (char*)data + s; // move char type pointer of `data` to `s` bytes. This updates the position of sending `data`.
     }
 }
 
+/**
+ * AUTO_NON_BLOCKING_MODULO: 这个常量用于确定在多少次接收失败后（由于数据尚未准备好，recv 函数返回 EAGAIN），函数应该检查是否超过了设定的时间限制。
+ * AUTO_NON_BLOCKING_TIMEOUT_SECONDS: 如果自从第一次遇到 EAGAIN 错误后，已经过去了超过 AUTO_NON_BLOCKING_TIMEOUT_SECONDS 定义的秒数，那么代码会将套接字从非阻塞模式切换回阻塞模式。
+ * 程序根据实际的网络条件动态调整套接字的行为。
+ * 在非阻塞模式下，如果数据短时间内未到达，程序会尝试通过周期性检查来决定是否继续等待或是切换到阻塞模式，这样可以更有效地管理资源，同时避免无谓的CPU循环等待。
+*/
 static inline void readSocket(bool* isNonBlocking, int socket, void* data, size_t size) {
     unsigned int attempt = 0;
     time_t startTime;
@@ -122,8 +130,8 @@ SocketPool* SocketPool::connect(unsigned int nSockets, char** hosts, int* ports)
 SocketPool::SocketPool(unsigned int nSockets, int* sockets) {
     this->nSockets = nSockets;
     this->sockets = sockets;
-    this->isNonBlocking = new bool[nSockets];
-    this->sentBytes.exchange(0);
+    this->isNonBlocking = new bool[nSockets]; // array of bool value
+    this->sentBytes.exchange(0);//exchange() is an atomic function to set the `sentBytes` to 0
     this->recvBytes.exchange(0);
 }
 
@@ -136,10 +144,54 @@ SocketPool::~SocketPool() {
     delete[] isNonBlocking;
 }
 
+ssize_t recv_with_info(int fd, void *buf, size_t n, int flags) {
+    // 开始计时
+    unsigned long start = timeMs();
+    // 接收数据
+    ssize_t bytes_received = recv(fd, buf, n, flags);
+    // 结束计时
+    unsigned long stop = timeMs();
+    // 计算持续时间
+    unsigned long duration = stop - start;
+    // 检查数据是否成功接收
+    if (bytes_received != -1 and duration > 0) {
+        // 计算传输速率，单位为 kB/s
+        double rate = (bytes_received / 1024.0) / (duration  / 1000.0);
+        // 打印接收的数据量、持续时间和传输速率
+        printf("Socket %d: Received %ld bytes in %ld milliseconds at %.2f kB/s\n", fd, bytes_received, duration, rate);
+    }
+    return bytes_received;
+}
+
+ssize_t send_with_info(int fd, const void *buf, size_t n, int flags) {
+    // 开始计时
+    unsigned long start = timeMs();
+    // 发送数据
+    ssize_t bytes_sent = send(fd, buf, n, flags);
+    // 结束计时
+    unsigned long stop = timeMs();
+    // 计算持续时间
+    unsigned long duration = stop - start;
+    // 检查数据是否成功发送
+    if (bytes_sent != -1 and duration > 0) {
+        double rate = (bytes_sent / 1024.0) / (duration / 1000.0);
+        // 打印发送的数据量、持续时间和传输速率
+        printf("Socket %d: Sent %ld bytes in %ld milliseconds at %.2f kB/s\n", fd, bytes_sent, duration, rate);
+    }
+    return bytes_sent;
+}
+
 void SocketPool::write(unsigned int socketIndex, const void* data, size_t size) {
+    // Start timing
+    // auto start = std::chrono::high_resolution_clock::now();
     assert(socketIndex >= 0 && socketIndex < nSockets);
     sentBytes += size;
     writeSocket(sockets[socketIndex], data, size);
+    // Stop timing
+    // auto stop = std::chrono::high_resolution_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    // double rate = size / 1024.0 / (duration.count() / 1000.0f);
+    // printf("Sent %6ld kB in %lld milliseconds at %.2f kB/ms.\n", size / 1024, duration.count(), rate);
 }
 
 void SocketPool::read(unsigned int socketIndex, void* data, size_t size) {
@@ -162,9 +214,10 @@ void SocketPool::writeMany(unsigned int n, SocketIo* ios) {
             if (io->size > 0) {
                 isWriting = true;
                 int socket = sockets[io->socketIndex];
-                ssize_t s = send(socket, io->data, io->size, 0);
+                ssize_t s = send_with_info(socket, io->data, io->size, 0);
                 if (s < 0) {
                     if (SOCKET_LAST_ERRCODE == EAGAIN) {
+                        printf("***Send resource temporarily unavailable; try again later.***");
                         continue;
                     }
                     throw WriteSocketException(SOCKET_LAST_ERRCODE, SOCKET_LAST_ERROR);
@@ -184,6 +237,7 @@ void SocketPool::readMany(unsigned int n, SocketIo* ios) {
         SocketIo* io = &ios[i];
         assert(io->socketIndex >= 0 && io->socketIndex < nSockets);
         recvBytes += io->size;
+        printf("Recv many %6ld kB", io->size / 1024);
     }
     do {
         isReading = false;
@@ -195,6 +249,7 @@ void SocketPool::readMany(unsigned int n, SocketIo* ios) {
                 ssize_t r = recv(socket, (char*)io->data, io->size, 0);
                 if (r < 0) {
                     if (SOCKET_LAST_ERRCODE == EAGAIN) {
+                        printf("***Recv resource temporarily unavailable; try again later.***");
                         continue;
                     }
                     throw ReadSocketException(SOCKET_LAST_ERRCODE, SOCKET_LAST_ERROR);
