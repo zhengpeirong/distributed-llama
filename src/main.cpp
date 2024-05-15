@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cassert>
+#include <string.h>
 #include "utils.hpp"
 #include "socket.hpp"
 #include "transformer.hpp"
@@ -23,11 +24,11 @@ struct ProgramArgs {
     FloatType weightsFloatType;
     FloatType bufferFloatType;
     int nWorkers;
-    char** workerHosts;
-    int* workerPorts;
+    char** workerHosts;// TODO
+    int* workerPorts;// TODO
     float temperature;
     float topp;
-    pos_t steps;
+    pos_t steps;// TODO
     bool benchmark;
     unsigned long long seed;
 
@@ -35,11 +36,13 @@ struct ProgramArgs {
     int port;
 };
 
+// print error and exit
 int usage(const char* reason) {
     printf("Invalid usage: %s\n", reason);
     return EXIT_FAILURE;
 }
 
+// supported architecture <model>-tasks.cpp (llama2 grok1 mixtral) 
 TransformerArch getArch(TransformerSpec* spec) {
     if (spec->archType == LLAMA2) return buildLlama2Arch(spec);
     if (spec->archType == GROK1) return buildGrok1Arch(spec);
@@ -77,6 +80,24 @@ void generate(Inference* inference, SocketPool* socketPool, Tokenizer *tokenizer
     unsigned long totalGenerationTime = 0;
     unsigned long totalInferenceTime = 0;
     unsigned long totalTransferTime = 0;
+    // TODO: detailed data transmission rate
+    if (spec->archType == LLAMA2){
+        unsigned int NUM_SEND = 2; // llamaSyncRmsAtt, llamaSyncRmfFfn
+        unsigned int NUM_RECV = 4; // llamaSyncAtt,llamaSyncFfn2,llamaSyncFfnA,llamaSyncFfnB
+        unsigned long *sendRate[spec->nLayers][NUM_SEND]; // NUM_SEND sends in 1 transformer block
+        unsigned long *recvRate[spec->nLayers][NUM_RECV]; // NUM_RECV receives in 1 transformer block
+        
+        // TODO: totalDetailedTime; detailedTransferBW = bytes/time
+        unsigned int NUM_TASKS = 31; // 27 in a transformer block, 1 before transformer, 3 after transformer.
+        unsigned long detailedTime[NUM_TASKS]; 
+        unsigned long totalDetailedTime[NUM_TASKS];
+
+        // initialize as 0
+        memset(detailedTime, 0, sizeof(detailedTime));
+        memset(totalDetailedTime, 0, sizeof(totalDetailedTime));
+        memset(sendRate, 0, sizeof(sendRate));
+        memset(recvRate, 0, sizeof(recvRate));
+    }
     while (pos < args->steps) {
         unsigned long startTime = timeMs();
         float* logits = inference->infer(token, pos);
@@ -283,6 +304,9 @@ void simpleServer(Inference* inference, SocketPool* socketPool, Tokenizer *token
     }
 }
 
+/*
+run models following `args`
+*/
 int run(ProgramArgs* args, void (*program)(Inference* inference, SocketPool* socketPool, Tokenizer* tokenizer, Sampler* sampler, ProgramArgs* args, TransformerSpec* spec)) {
     if (args->modelPath == NULL) {
         return usage("Model is required");
@@ -312,7 +336,9 @@ int run(ProgramArgs* args, void (*program)(Inference* inference, SocketPool* soc
     delete socketPool;
     return EXIT_SUCCESS;
 }
-
+/**
+ * worker node
+*/
 int worker(ProgramArgs* args) {
     if (args->port < 1024) {
         return usage("Invalid port");
@@ -339,6 +365,39 @@ FloatType parseFloatType(char* val) {
     exit(EXIT_FAILURE);
 }
 
+/**
+ * Entry point of the program, handle command line arguments, execute `mode` functionalities.
+ *
+ * Parameters:
+ *   argc (int): The number of command line arguments, including the name of the program.
+ *   argv (char**): An array of strings representing the command line arguments. This includes the following optional parameters:
+ *     --model <path>               Specifies the path to the model file.
+ *     --tokenizer <path>           Specifies the path to the tokenizer file.
+ *     --prompt <text>              Specifies the initial prompt text for text generation.
+ *     --weights-float-type <type>  Specifies the floating point type for weights (e.g., F16, F32).
+ *     --buffer-float-type <type>   Specifies the floating point type for buffers.
+ *     --workers <address1>...      Specifies the address and port of worker nodes, in the format host:port.
+ *     --port <port>                Specifies the server port number.
+ *     --nthreads <number>          Specifies the number of threads.
+ *     --steps <number>             Specifies the number of generation steps.
+ *     --temperature <value>        Specifies the temperature for generation.
+ *     --topp <value>               Specifies the probability truncation threshold.
+ *     --seed <number>              Specifies the random seed.
+ * 
+ * Returns:
+ *   int - 0 indicates success, non-zero indicate errors or exceptions.
+ * 
+ * Supported modes include:
+ *   inference - Root node.
+ *   generate - inference without printing stats.
+ *   chat - .
+ *   simple-server - .
+ *   worker - Worker node.
+ *
+ * Error Handle:
+ *   - If the command line arguments are invalid or insufficient, the program will output usage instructions and exit.
+ *   - The program configures its behavior by parsing command line arguments; incorrect parameter formats will cause the program to terminate.
+ */
 int main(int argc, char *argv[]) {
     initQuants();
 
