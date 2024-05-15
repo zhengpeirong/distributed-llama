@@ -48,7 +48,7 @@ class SocketPool {
 private:
     // Pointer to an array of socket file descriptors. This array stores the handles for all sockets managed by the pool.
     int* sockets;
-    // /not used/ Pointer to an array indicating whether each socket is in non-blocking mode.
+    // Pointer to an array indicating whether each socket is in non-blocking mode.
     bool* isNonBlocking;
     // Atomic variable to track the total number of bytes sent across all sockets.
     // Using atomic ensures that updates are thread-safe.
