@@ -62,7 +62,7 @@ static inline void readSocket(bool* isNonBlocking, int socket, void* data, size_
     unsigned int attempt = 0;
     time_t startTime;
     while (size > 0) {
-        int r = recv(socket, (char*)data, size, 0);
+        int r = recv_with_info(socket, (char*)data, size, 0);
         if (r < 0) {
             if (*isNonBlocking && SOCKET_LAST_ERRCODE == EAGAIN) {
                 attempt++;
@@ -246,7 +246,7 @@ void SocketPool::readMany(unsigned int n, SocketIo* ios) {
             if (io->size > 0) {
                 isReading = true;
                 int socket = sockets[io->socketIndex];
-                ssize_t r = recv(socket, (char*)io->data, io->size, 0);
+                ssize_t r = recv_with_info(socket, (char*)io->data, io->size, 0);
                 if (r < 0) {
                     if (SOCKET_LAST_ERRCODE == EAGAIN) {
                         printf("***Recv resource temporarily unavailable; try again later.***");
