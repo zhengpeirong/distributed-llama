@@ -237,7 +237,7 @@ void SocketPool::readMany(unsigned int n, SocketIo* ios) {
         SocketIo* io = &ios[i];
         assert(io->socketIndex >= 0 && io->socketIndex < nSockets);
         recvBytes += io->size;
-        printf("Recv many %6ld kB", io->size / 1024);
+        // printf("Recv many %6ld kB", io->size / 1024);
     }
     do {
         isReading = false;
