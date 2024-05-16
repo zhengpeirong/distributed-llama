@@ -132,8 +132,8 @@ make main
 7. Transfer weights and the tokenizer file to the root device.
 8. Optional: assign static IP addresses.
 ```sh
-sudo ip addr add 10.0.0.1/24 dev eth0 # 1th device
-sudo ip addr add 10.0.0.2/24 dev eth0 # 2th device
+sudo ip addr add 192.168.1.11/24 dev eth0 # 1th device
+sudo ip addr add 192.168.1.12/24 dev eth0 # 2th device
 ```
 9. Run worker nodes on worker devices:
 ```sh
@@ -141,13 +141,27 @@ sudo nice -n -20 ./main worker --port 9998 --nthreads 4
 ```
 10. Run root node on the root device:
 ```sh
-sudo nice -n -20 ./main inference --model ../dllama_llama-2-7b_q40.bin --tokenizer ../dllama-llama2-tokenizer.t --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 16 --nthreads 4 --workers 10.0.0.2:9998
+sudo nice -n -20 ./main inference --model ../dllama_llama-2-7b_q40.bin --tokenizer ../dllama-llama2-tokenizer.t --weights-float-type q40 --buffer-float-type q80 --prompt "My name is" --steps 128 --nthreads 4 --workers 192.168.10.2:9998
+```
+11. run llama3
+```sh
+sudo nice -n -20 ./main inference --weights-float-type q40 --buffer-float-type q80 --prompt "My name is" --steps 128 --nthreads 8 --model model/dllama_meta-llama-3-8b_q40.bin --tokenizer model/dllama-llama3-tokenizer.t
+```
+12. root test_latency.py 
+>Note: virtual environment required.
+```sh
+sudo ~/distributed-llama/dllama/bin/python test_latency.py 
+```
+13. debug using CLion
+>Note: `sudo su` required.
+```sh
+gdbserver :1234 nice -n -20 ./main inference --model ./model/dllama_meta-llama-3-8b_q40.bin --tokenizer model/dllama-llama3-tokenizer.t --weights-float-type q40 --buffer-float-type q80 --prompt "My name is" --steps 128 --nthreads 4
 ```
 
 To add more worker nodes, just add more addresses to the `--workers` argument.
 
 ```
-./main inference ... --workers 10.0.0.2:9998 10.0.0.3:9998 10.0.0.4:9998
+./main inference ... --workers 192.168.1.11:9998 192.168.1.12:9998 192.168.1.13:9998
 ```
 
 [Share your results](https://github.com/b4rtaz/distributed-llama/discussions)!
@@ -175,7 +189,7 @@ sudo nice -n -20 ./main worker --port 9998 --nthreads 4
 ```
 6. Run root node on the root device:
 ```sh
-sudo nice -n -20 ./main inference --model ../dllama_llama-2-7b_q40.bin --tokenizer ../dllama-llama2-tokenizer.t --weights-float-type q40 --buffer-float-type q80 --prompt "Hello world" --steps 16 --nthreads 4 --workers 192.168.0.1:9998
+sudo nice -n -20 ./main inference --model ../dllama_llama-2-7b_q40.bin --tokenizer ../dllama-llama2-tokenizer.t --weights-float-type q40 --buffer-float-type q80 --prompt "My name is" --steps 16 --nthreads 4 --workers 192.168.0.1:9998
 ```
 7. To run the root node in the chat mode:
 ```sh
