@@ -153,8 +153,8 @@ ssize_t recv_with_info(int fd, void *buf, size_t n, int flags) {
     unsigned long stop = timeMs();
     // 计算持续时间
     unsigned long duration = stop - start;
-    // 检查数据是否成功接收
-    if (bytes_received != -1 and duration > 0) {
+    // 检查数据是否成功接收，排除掉权重信息(大于100kB)
+    if (bytes_received != -1 and duration > 0 and bytes_received<=12500000) {
         // 计算传输速率，单位为 kB/s
         double rate = (bytes_received * 8.0 / 1000) / (duration);
         // 打印接收的数据量、持续时间和传输速率
@@ -172,8 +172,8 @@ ssize_t send_with_info(int fd, const void *buf, size_t n, int flags) {
     unsigned long stop = timeMs();
     // 计算持续时间
     unsigned long duration = stop - start;
-    // 检查数据是否成功发送
-    if (bytes_sent != -1 and duration > 0) {
+    // 检查数据是否成功发送，排除掉权重信息(大于100kB)
+    if (bytes_sent != -1 and duration > 0 and bytes_sent<=12500000) {
         double rate = (bytes_sent * 8.0 / 1000) / (duration);
         // 打印发送的数据量、持续时间和传输速率
         printf("Socket %d: Sent %ld bytes in %ld milliseconds at %.2f  Mb/s\n", fd, bytes_sent, duration, rate);
