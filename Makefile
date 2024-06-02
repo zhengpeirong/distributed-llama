@@ -50,3 +50,47 @@ llama2-tasks-test: src/llama2-tasks-test.cpp utils quants funcs socket transform
 	$(CXX) $(CXXFLAGS) src/llama2-tasks-test.cpp -o llama2-tasks-test utils.o quants.o funcs.o socket.o transformer.o tasks.o llama2-tasks.o tokenizer.o $(LIBS)
 grok1-tasks-test: src/grok1-tasks-test.cpp utils quants funcs socket transformer tasks llama2-tasks grok1-tasks tokenizer
 	$(CXX) $(CXXFLAGS) src/grok1-tasks-test.cpp -o grok1-tasks-test utils.o quants.o funcs.o socket.o transformer.o tasks.o llama2-tasks.o grok1-tasks.o tokenizer.o $(LIBS)
+
+# TODO: unfinished docker settings
+docker-worker-build:
+	@docker build -f Dockerfile -t alpine_dllama_worker \
+		--target worker \
+		--build-arg A_ALPINE_IMG_TAG=latest \
+ 		. 
+
+docker-inference-build:
+	@docker build -f Dockerfile -t alpine_dllama_inference \
+		--target inference \
+		--build-arg A_ALPINE_IMG_TAG=latest \
+		.
+
+docker_create_network:
+	@docker network create -d bridge dllama-net || true
+
+# if local host to run inference, add -p 9998:****
+WORKER_ID = 1
+docker-worker-run:
+	@docker run -itd --rm \
+		--name alpine-dllama-worker-$(WORKER_ID) \
+		--network dllama-net \
+		-e E_WORKER_PARAM="--port 9998 --nthreads 1" \
+		alpine_dllama_worker
+
+# workers list need a discover sys like etcd
+WORKERS = 192.168.0.1:9998
+docker-inference-run:
+	@docker run -it --rm \
+		--network dllama-net \
+		--name alpine-dllama-inference \
+		-e E_INFERENCE_PARAM += "--workers $(WORKERS)"\
+		alpine_dllama_inference
+
+docker-1-worker-inference:
+	@make docker-worker-run 
+	@make docker-inference-run
+
+docker-3-worker-inference:
+	@make docker-worker-run 
+	@make docker-worker-run WORKER_ID=2
+	@make docker-worker-run WORKER_ID=3
+	@make docker-inference-run WORKERS="$(WORKERS)"

@@ -231,6 +231,19 @@ To add more worker nodes, just add more addresses to the `--workers` argument.
 ./dllama inference ... --workers 192.168.0.1:9998 192.168.0.2:9998 192.168.0.3:9998
 ```
 
+## 💻 How to Run on Docker
+need install docker, more detail see [Dockerfile](./Dockerfile) and [Makefile](./Makefile)
+1. Build docker image
+```sh
+make docker-worker-build
+make docker-inference-build
+```
+2. Run docker container
+```sh
+make docker-1-worker-inference
+make docker-3-worker-inference
+```
+
 ## 💡 License
 
 This project is released under the MIT license.
