@@ -110,7 +110,10 @@ void App::run(AppArgs* args, void (*program)(Inference* inference, SocketPool* s
 
     SocketPool* socketPool = SocketPool::connect(args->nWorkers, args->workerHosts, args->workerPorts);
     unsigned int nSlices = args->nWorkers + 1;
-
+    // create rootNode to build topology
+    Node rootNode(AllReduceType::RingReduce, socketPool, nSlices);
+    rootNode.sendCommPackage(nSlices);
+    rootNode.proceedIfAllSuccess(nSlices-1);
     TransformerSpec spec = Transformer::loadSpecFromFile(args->modelPath, nSlices, args->weightsFloatType, args->bufferFloatType);
     TransformerArch arch = TransformerArchFactory::create(&spec);
 

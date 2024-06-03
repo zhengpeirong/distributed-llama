@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <exception>
 #include <vector>
+#include <string>
 
 class ReadSocketException : public std::exception {
 public:
@@ -30,12 +31,15 @@ private:
     int* sockets;
     std::atomic_uint sentBytes;
     std::atomic_uint recvBytes;
+    std::vector<std::string> hosts;
+    std::vector<int> ports;      
 
 public:
     static SocketPool* connect(unsigned int nSockets, char** hosts, int* ports);
 
     unsigned int nSockets;
 
+    SocketPool(unsigned int nSockets, int* sockets,std::vector<std::string> hosts,std::vector<int> ports);
     SocketPool(unsigned int nSockets, int* sockets);
     ~SocketPool();
 
@@ -45,6 +49,9 @@ public:
     void writeMany(unsigned int n, SocketIo* ios);
     void readMany(unsigned int n, SocketIo* ios);
     void getStats(size_t* sentBytes, size_t* recvBytes);
+
+    std::string getHost(unsigned int socketIndex) const;
+    int getPort(unsigned int socketInex) const;
 };
 
 class Socket {

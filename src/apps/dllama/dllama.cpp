@@ -184,10 +184,12 @@ void worker(AppArgs* args) {
 
     SocketServer server(args->port);
     Socket socket = server.accept();
+    // worker 接收root传来的package，初始化socketPool,并且accecpt其他节点的连接
+    Node* node = Node::initializeNodeAndConnections(&socket);
     TransformerSpec spec;
     Transformer transformer = Transformer::loadSlice(&spec, &socket);
     TransformerArch arch = TransformerArchFactory::create(&spec);
-
+    
     Worker worker = Worker(&arch, args->nThreads, &transformer, &socket);
     worker.work();
 }
