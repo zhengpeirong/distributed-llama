@@ -7,6 +7,7 @@
 #include <ctime>
 #include <cassert>
 #include <stdexcept>
+#include <sstream>
 #include "funcs.hpp"
 #include "utils.hpp"
 #include "tokenizer.hpp"
@@ -35,26 +36,83 @@ void safePrintf(char *piece) {
     }
 }
 
-Tokenizer::Tokenizer(char* tokenizerPath, int vocabSize) {
-    // i should have written the vocab_size into the tokenizer file... sigh
-    this->vocabSize = vocabSize;
+Tokenizer::Tokenizer(char* tokenizerPath, int modelVocabSize) {
+    eosId = -1;
+    bosId = -1;
+    chatEosId = -1;
+    chatTemplate = NULL;
+    chatStop = NULL;
 
     // read in the file
     FILE *file = fopen(tokenizerPath, "rb");
     if (!file)
         throw std::runtime_error("Failed to open tokenizer file");
-    TokenizerHeader header;
-    if (fread(&header, sizeof(TokenizerHeader), 1, file) != 1)
-        throw std::runtime_error("Cannot read tokenizer header");
+    int magic;
+    if (fread(&magic, sizeof(int), 1, file) != 1)
+        throw std::runtime_error("Cannot read tokenizer magic number");
 
-    if (header.magic != 0x567123 || header.vocabSize != vocabSize)
+    if (magic == 0x567123) {
+        TokenizerOldHeader header;
+        if (fread(&header, sizeof(TokenizerOldHeader), 1, file) != 1)
+            throw std::runtime_error("Cannot read tokenizer header");
+        maxTokenLength = header.maxTokenLength;
+        vocabSize = header.vocabSize;
+        bosId = header.bosId;
+        eosId = header.eosId;
+    } else if (magic == 0x567124) {
+        TransformerHeaderKey key;
+        int headerSize;
+        if (fread(&headerSize, sizeof(int), 1, file) != 1)
+            throw std::runtime_error("Cannot read tokenizer header size");
+        int nKv = (headerSize - 2 * sizeof(int)) / sizeof(int);
+        int buffer[nKv];
+        if (fread(&buffer, nKv * sizeof(int), 1, file) != 1) {
+            throw std::runtime_error("Cannot read header values");
+        }
+        int version = -1;
+        int chatTemplateLength = -1;
+        int chatStopLength = -1;
+        for (int i = 0; i < nKv; i += 2) {
+            int key = buffer[i];
+            int value = buffer[i + 1];
+            if (key == TOK_VERSION) version = value;
+            else if (key == TOK_VOCAB_SIZE) vocabSize = value;
+            else if (key == MAX_TOKEN_LENGTH) maxTokenLength = (unsigned int)value;
+            else if (key == BOS_ID) bosId = value;
+            else if (key == EOS_ID) eosId = value;
+            else if (key == CHAT_EOS_ID) chatEosId = value;
+            else if (key == CHAT_TEMPLATE) chatTemplateLength = value;
+            else if (key == CHAT_STOP) chatStopLength = value;
+            else if (key == PAD_ID) {} // ignore
+            else {
+                throw std::runtime_error("Invalid tokenizer header key:" + std::to_string(key));
+            }
+        }
+
+        if (version != 1)
+            throw std::runtime_error("Old tokenizer version, please regenerate your tokenizer");
+
+        if (chatTemplateLength > 0) {
+            chatTemplate = new char[chatTemplateLength];
+            if (fread(chatTemplate, chatTemplateLength, 1, file) != 1)
+                throw std::runtime_error("Cannot read chat template from tokenizer file");
+        }
+        if (chatStopLength > 0) {
+            chatStop = new char[chatStopLength];
+            if (fread(chatStop, chatStopLength, 1, file) != 1)
+                throw std::runtime_error("Cannot read chat stop from tokenizer file");
+        }
+    } else {
         throw std::runtime_error("Invalid tokenizer file");
+    }
 
-    maxTokenLength = header.maxTokenLength;
-    bosId = header.bosId;
-    eosId = header.eosId;
+    if (maxTokenLength < 1 || vocabSize != modelVocabSize) {
+        throw std::runtime_error("Tokenizer file is invalid or incompatible with model");
+    }
+
     if (bosId >= 0) printf("📄 bosId: %d\n", bosId);
     if (eosId >= 0) printf("📄 eosId: %d\n", eosId);
+    if (chatEosId >= 0) printf("📄 chatEosId: %d\n", chatEosId);
 
     // malloc space to hold the scores and the strings
     vocab = (char**)malloc(vocabSize * sizeof(char*));
@@ -80,6 +138,9 @@ Tokenizer::Tokenizer(char* tokenizerPath, int vocabSize) {
 }
 
 Tokenizer::~Tokenizer() {
+    if (chatTemplate != NULL) delete[] chatTemplate;
+    if (chatStop != NULL) delete[] chatStop;
+
     for (int i = 0; i < vocabSize; i++) { free(vocab[i]); }
     free(vocab);
     free(vocabScores);
@@ -140,7 +201,9 @@ void Tokenizer::encode(char *text, int *tokens, int *nTokens, bool addBos, bool 
     if (text[0] != '\0') {
         char space[] = " ";
         int dummy_prefix = str_lookup(space, sortedVocab, vocabSize);
-        tokens[(*nTokens)++] = dummy_prefix;
+        // TODO: this condition saves us from segmentation fault
+        if (dummy_prefix != -1)
+            tokens[(*nTokens)++] = dummy_prefix;
     }
 
     // Okay UTF-8 time. This will get messy. Here is the reference from Wikipedia:
@@ -305,18 +368,6 @@ int sample_topp(float* probabilities, int n, float topp, ProbIndex* probindex, f
     return probindex[last_idx].index; // in case of rounding errors
 }
 
-void readStdin(const char* guide, char* buffer, size_t bufsize) {
-    fflush(stdin);
-    // read a line from stdin, up to but not including \n
-    printf("%s", guide);
-    if (fgets(buffer, bufsize, stdin) != NULL) {
-        size_t len = strlen(buffer);
-        if (len > 0 && buffer[len - 1] == '\n') {
-            buffer[len - 1] = '\0'; // strip newline
-        }
-    }
-}
-
 Sampler::Sampler(int vocab_size, float temperature, float topp, unsigned long long rngSeed) {
     this->vocab_size = vocab_size;
     this->temperature = temperature;
@@ -361,4 +412,136 @@ void Sampler::setTemp(float temp) {
 
 void Sampler::setSeed(unsigned long long seed) {
     this->rngState = seed;
+}
+
+TokenizerChatStops::TokenizerChatStops(Tokenizer* tokenizer) {
+    const bool hasExtraStop = tokenizer->chatStop != NULL;
+    nStops = hasExtraStop ? 2 : 1;
+    char** s = new char*[nStops];
+    s[0] = tokenizer->vocab[tokenizer->chatEosId];
+    if (hasExtraStop)
+        s[1] = tokenizer->chatStop;
+    maxStopLength = 0;
+    for (size_t i = 0; i < nStops; i++) {
+        size_t len = strlen(s[i]);
+        if (len > maxStopLength) maxStopLength = len;
+    }
+    stops = (const char**)s;
+}
+
+TokenizerChatStops::~TokenizerChatStops() {
+    delete[] stops;
+}
+
+ChatTemplate::ChatTemplate(const char* chatTemplate, const char* eos) {
+    if (chatTemplate == NULL)
+        throw std::runtime_error("The tokenizer does not include chat template");
+
+    printf("⭐ chat template: ");
+    if (strstr(chatTemplate, "<|start_header_id|>") != NULL) {
+        type = TEMPLATE_LLAMA3;
+        printf("llama3\n");
+    } else if (strstr(chatTemplate, "<|user|>") != NULL) {
+        type = TEMPLATE_ZEPHYR;
+        printf("zephyr\n");
+    } else if (strstr(chatTemplate, "<|im_start|>") != NULL) {
+        type = TEMPLATE_CHATML;
+        printf("chatml\n");
+    } else throw new std::runtime_error("Not supported chat template");
+    this->eos = eos;
+}
+
+std::string ChatTemplate::generate(unsigned int nMessages, ChatItem* items, bool appendGenerationPrompt) {
+    std::ostringstream buffer;
+    if (type == TEMPLATE_LLAMA3) {
+        for (unsigned int i = 0; i < nMessages; i++)
+            buffer << "<|start_header_id|>" << items[i].role << "<|end_header_id|>\n\n" << items[i].message << eos;
+        if (appendGenerationPrompt)
+            buffer << "<|start_header_id|>assistant<|end_header_id|>\n\n";
+    } else if (type == TEMPLATE_CHATML) {
+        for (unsigned int i = 0; i < nMessages; i++)
+            buffer << "<|im_start|>" << items[i].role << "\n" << items[i].message << "<|im_end|>\n";
+        if (appendGenerationPrompt)
+            buffer << "<|im_start|>assistant\n";
+    } else if (type == TEMPLATE_ZEPHYR) {
+        for (unsigned int i = 0; i < nMessages; i++)
+            buffer << "<|" << items[i].role << "|>\n" << items[i].message << eos << "\n";
+        if (appendGenerationPrompt)
+            buffer << "<|assistant|>\n";
+    }
+    return buffer.str();
+}
+
+EosDetector::EosDetector(int eosId, size_t nStops, const char** stops, int paddingLeft, int paddingRight) {
+    this->eosId = eosId;
+    this->nStops = nStops;
+    this->stops = stops;
+    this->stopSizes = new size_t[nStops];
+    for (size_t s = 0; s < nStops; s++) {
+        stopSizes[s] = strlen(stops[s]);
+        printf("🛑 stop: %s\n", stops[s]);
+    }
+    this->bufferPos = 0;
+    this->bufferSize = 0;
+    this->paddingLeft = paddingLeft;
+    this->paddingRight = paddingRight;
+}
+
+EosDetector::~EosDetector() {
+    if (bufferSize > 0)
+        delete[] buffer;
+    delete[] stopSizes;
+}
+
+EosDetectorType EosDetector::append(int tokenId, const char* piece) {
+    int pieceLength = strlen(piece);
+    int length = bufferPos + pieceLength + 1;
+    if (length > bufferSize) {
+        char* newBuffer = new char[length];
+        if (bufferPos > 0)
+            memcpy(newBuffer, buffer, bufferPos);
+        if (bufferSize > 0)
+            delete[] buffer;
+        buffer = newBuffer;
+    }
+    memcpy(buffer + bufferPos, piece, pieceLength + 1);
+    bufferPos += pieceLength;
+
+    // detection
+
+    if (tokenId == eosId) {
+        eosPos = bufferPos - pieceLength;
+        return EOS;
+    }
+    eosPos = -1;
+
+    for (size_t s = 0; s < nStops; s++) {
+        size_t stopSize = stopSizes[s];
+        if (bufferPos > stopSize + paddingLeft + paddingRight) continue;
+
+        for (int lo = 0; lo <= paddingLeft; lo++) {
+            int n = bufferPos - lo;
+            if (n == 0 || n > stopSize + paddingRight) continue;
+            if (n > stopSize) n = stopSize;
+            if (strncmp(buffer + lo, stops[s], n) == 0) {
+                if (n == stopSize) {
+                    eosPos = lo;
+                    return EOS;
+                }
+                return MAYBE_EOS;
+            }
+        }
+    }
+    return NOT_EOS;
+}
+
+char* EosDetector::getDelta() {
+    if (eosPos == -1) return buffer;
+    if (eosPos == 0) return NULL;
+    buffer[eosPos] = '\0';
+    return buffer;
+}
+
+void EosDetector::clear() {
+    bufferPos = 0;
 }

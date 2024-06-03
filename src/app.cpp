@@ -23,7 +23,7 @@ AppArgs AppArgs::parse(int argc, char** argv, bool hasMode) {
     args.modelPath = NULL;
     args.tokenizerPath = NULL;
     args.prompt = NULL;
-    args.weightsFloatType = F32;
+    args.weightsFloatType = FUNK;
     args.bufferFloatType = F32;
     args.nWorkers = 0;
     args.port = 9990;
@@ -116,12 +116,12 @@ void App::run(AppArgs* args, void (*program)(Inference* inference, SocketPool* s
     rootNode.proceedIfAllSuccess(nSlices-1);
     TransformerSpec spec = Transformer::loadSpecFromFile(args->modelPath, nSlices, args->weightsFloatType, args->bufferFloatType);
     TransformerArch arch = TransformerArchFactory::create(&spec);
+    Tokenizer tokenizer(args->tokenizerPath, spec.vocabSize);
 
     if (args->steps == 0 || args->steps > spec.seqLen) {
         args->steps = spec.seqLen;
     }
 
-    Tokenizer tokenizer(args->tokenizerPath, spec.vocabSize);
     Transformer transformer = Transformer::loadRootFromFile(args->modelPath, &spec, socketPool);
     socketPool->setTurbo(true);
 
