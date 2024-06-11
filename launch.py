@@ -71,9 +71,8 @@ if __name__ == '__main__':
     if (len(sys.argv) < 2):
         printUsage()
         exit(1)
-
-    os.chdir(os.path.dirname(__file__))
-
+    script_path = os.path.abspath(sys.argv[0])
+    os.chdir(os.path.dirname(script_path))
     modelName = sys.argv[1].replace('-', '_')
     if modelName not in MODELS:
         print(f'Model is not supported: {modelName}')

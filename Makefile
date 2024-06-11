@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Werror -O3 -march=native -mtune=native
+CXXFLAGS = -std=c++11 -Werror -O3 -march=native -mtune=native -mfma
 
 # Conditional settings for Windows
 ifeq ($(OS),Windows_NT)
@@ -77,7 +77,7 @@ docker-worker-run:
 		alpine_dllama_worker
 
 # workers list need a discover sys like etcd
-WORKERS = 192.168.0.1:9998
+WORKERS = 10.0.0.2:9998
 docker-inference-run:
 	@docker run -it --rm \
 		--network dllama-net \
