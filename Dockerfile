@@ -19,13 +19,16 @@ ENV E_MODEL_PARAM ${A_MODEL_PARAM}
 # build prepare layer, use arg/env
 RUN set -eux; \
     \
+    # Install necessary packages without cache to keep the image size small
     apk add --no-cache \
     git \
     g++ \
     make \
     python3 \
     py3-pip \
+    py3-requests \
     ; \
+    # Clone the specified Git repository
     git clone ${A_GIT_REPO_URL} distributed-llama; \
     cd distributed-llama; \
     git checkout -b dev/docker origin/dev/docker; \
@@ -36,10 +39,10 @@ RUN set -eux; \
 # Custom cache invalidation
 ARG CACHEBUST=1
 
-# download
+# Download model and run launch.py with automatic "no" input
 FROM base as download_model
-RUN cd distributed-llama;\
-    python3 launch.py tinyllama_1_1b_3t_q40
+RUN cd distributed-llama; \
+    yes "N" | python3 launch.py tinyllama_1_1b_3t_q40
 
 
 # docker run container runtime, use env
