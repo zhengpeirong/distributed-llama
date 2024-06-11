@@ -241,8 +241,23 @@ make docker-inference-build
 ```
 2. Run docker container
 ```sh
-make docker-1-worker-inference
-make docker-3-worker-inference
+make docker-inference
+make docker-inference-1-worker
+make docker-inference-3-worker
+```
+## 🧑‍💻️ How to debug on Docker
+
+1. Build docker image
+```sh
+sudo docker build -t dllama .
+```
+2. Enter the image
+```sh
+sudo docker run -it --rm --privileged dllama /bin/sh
+```
+3. Run the script
+```sh
+sh run_tinyllama_1_1b_3t_q40.sh 
 ```
 
 ## 💡 License
