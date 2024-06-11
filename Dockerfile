@@ -10,8 +10,8 @@ LABEL dllama.image.authors="weege007@gmail.com, peirong.zheng@polyu.edu.hk"
 # docker build arg after each FROM
 ARG A_WORKER_PARAM="--port 9998 --nthreads 4"
 ARG A_INFERENCE_PARAM="--prompt 'Hello' --steps 64 --nthreads 4"
-ARG A_MODEL_PARAM="--model /distributed-llama/models/tinyllama_1_1b_3t_q40/dllama_model_tinyllama_1_1b_3t_q40.m --tokenizer models/tinyllama_1_1b_3t_q40/dllama_tokenizer_tinyllama_1_1b_3t_q40.t "
-ARG A_GIT_REPO_URL=https://github.com/b4rtaz/distributed-llama.git
+ARG A_MODEL_PARAM="--model models/tinyllama_1_1b_3t_q40/dllama_model_tinyllama_1_1b_3t_q40.m --tokenizer models/tinyllama_1_1b_3t_q40/dllama_tokenizer_tinyllama_1_1b_3t_q40.t "
+ARG A_GIT_REPO_URL=https://github.com/zhengpeirong/distributed-llama.git
 # container env
 ENV E_WORKER_PARAM ${A_WORKER_PARAM}
 ENV E_INFERENCE_PARAM ${A_INFERENCE_PARAM}
@@ -27,7 +27,9 @@ RUN set -eux; \
     py3-pip \
     ; \
     git clone ${A_GIT_REPO_URL} distributed-llama; \
-    make -C distributed-llama dllama; \
+    cd distributed-llama; \
+    git checkout -b dev/docker origin/dev/docker; \
+    make dllama; \
     \
     echo "Compile Distributed Llama Done\n"
 
@@ -47,4 +49,4 @@ CMD ["sh","-c","/distributed-llama/dllama  worker ${E_WORKER_PARAM}"]
 
 FROM download_model as inference
 RUN echo "E_INFERENCE_PARAM: ${E_INFERENCE_PARAM}\n"
-CMD ["sh","-c","/distributed-llama/dllama inference ${E_MODEL_PARAM} ${E_INFERENCE_PARAM}\n"]
+# CMD ["sh","-c","/distributed-llama/dllama inference ${E_MODEL_PARAM} ${E_INFERENCE_PARAM}\n"]
