@@ -236,14 +236,14 @@ To add more worker nodes, just add more addresses to the `--workers` argument.
 need install docker, more detail see [Dockerfile](./Dockerfile) and [Makefile](./Makefile)
 1. Build docker image
 ```sh
-make docker-worker-build
-make docker-inference-build
+sudo make docker-worker-build
+sudo make docker-inference-build
 ```
 2. Run docker container
 ```sh
-make docker-inference
-make docker-inference-1-worker
-make docker-inference-3-worker
+sudo make docker-inference
+sudo make docker-inference-1-worker
+sudo make docker-inference-3-worker
 ```
 ## 🧑‍💻️ How to debug on Docker
 
