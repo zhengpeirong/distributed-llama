@@ -9,7 +9,7 @@ LABEL dllama.image.authors="weege007@gmail.com, peirong.zheng@polyu.edu.hk"
 
 # docker build arg after each FROM
 ARG A_WORKER_PARAM="--port 9998 --nthreads 4"
-ARG A_INFERENCE_PARAM="--prompt 'Hello' --steps 64 --nthreads 4"
+ARG A_INFERENCE_PARAM="--prompt 'Hello' --steps 64 --nthreads 4 --buffer-float-type q80"
 ARG A_MODEL_PARAM_TINYLLAMA="--model /distributed-llama/models/tinyllama_1_1b_3t_q40/dllama_model_tinyllama_1_1b_3t_q40.m --tokenizer /distributed-llama/models/tinyllama_1_1b_3t_q40/dllama_tokenizer_tinyllama_1_1b_3t_q40.t "
 ARG A_MODEL_PARAM_LLAMA3="--model /distributed-llama/models/llama3_8b_instruct_q40/dllama_model_llama3_8b_instruct_q40.m --tokenizer /distributed-llama/models/llama3_8b_instruct_q40/dllama_tokenizer_llama3_8b_instruct_q40.t "
 ARG A_GIT_REPO_URL=https://github.com/zhengpeirong/distributed-llama.git
@@ -31,6 +31,9 @@ RUN set -eux; \
     python3 \
     py3-pip \
     py3-requests \
+    iperf \
+    busybox-extras \
+    tcpdump \
     ; \
     # Clone the specified Git repository
     git clone ${A_GIT_REPO_URL} distributed-llama; \
