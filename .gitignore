@@ -1,5 +1,5 @@
 .vscode/settings.json
-
+tcpdump_logs/*
 *.o
 *.0
 *.dSYM
