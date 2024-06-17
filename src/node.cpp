@@ -122,3 +122,17 @@ Node* Node::initializeNodeAndConnections(Socket* socket) {
     std::cout << "Sent success signal to root.\n";
     return (new Node(package.type, package.inPort, package.outPort, socketPool,inSocket,socket));
 }
+
+void Node::recv(void* data, size_t size){
+    bool isOutNodeRoot = this->outPort==-1;
+    if(isOutNodeRoot) this->rootSocket->read(data,size);
+    else this->socketPool->read(this->outPort,data,size);
+}
+
+void Node::send(const void* data, size_t size){
+    bool isNodeRoot = this->inSocket==nullptr;
+    bool isInNodeRoot = this->inPort==-1;
+    if(isInNodeRoot) this->rootSocket->write(data,size);
+    if(isNodeRoot) this->socketPool->write(this->inPort,data,size);
+    else this->inSocket->write(data,size);
+}

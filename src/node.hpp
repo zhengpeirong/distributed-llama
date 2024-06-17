@@ -55,14 +55,28 @@ public:
     ;
 
     // *************************** methods used during ring reduce
-    void nonBlockingRecv();
+    void recv(void* data, size_t size);
 
-    void blockingSend();
+    void send(const void* data, size_t size);
 
-    void waitNonBlocking();
+    void storeRecvBuffer(char* buffer) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            recvBuffer_.reset(buffer);
+        }
+
+    const char* getRecvBuffer() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return recvBuffer_.get();
+    }
+
+    void clearRecvBuffer() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        recvBuffer_.reset();
+    }
 
 private:
-    void createSocketPool();
+    std::mutex mutex_;
+    std::unique_ptr<char[]> recvBuffer_;
 };
 
 SocketIo* preparePackageSizeIOs(unsigned int nodeCount, SocketIo* ios);
