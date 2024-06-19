@@ -13,6 +13,7 @@
 #include "../../tasks.hpp"
 #include "../../tokenizer.hpp"
 #include "../../app.hpp"
+#include <node.hpp>
 
 void generate(Inference* inference, SocketPool* socketPool, Tokenizer *tokenizer, Sampler *sampler, AppArgs* args, TransformerSpec* spec) {
     if (args->prompt == NULL)
@@ -215,7 +216,7 @@ void worker(AppArgs* args) {
     Transformer transformer = Transformer::loadSlice(&spec, &socket);
     TransformerArch arch = TransformerArchFactory::create(&spec);
     
-    Worker worker = Worker(&arch, args->nThreads, &transformer, &socket);
+    Worker worker = Worker(&arch, args->nThreads, &transformer, &socket, node);
     worker.work();
 }
 

@@ -3,6 +3,8 @@
 
 #include "transformer.hpp"
 #include "utils.hpp"
+#include "barrier.hpp"
+#include "node.hpp"
 
 #define TASK_ARGS unsigned int nThreads, unsigned int threadIndex, void* userData
 
@@ -14,6 +16,8 @@ struct TransformerContext {
     Transformer* transformer;
     Socket* socket;
     SocketPool* socketPool;
+    Barrier* barrier;
+    Node* node;
     unsigned int currentBlockIndex;
 };
 
@@ -58,7 +62,7 @@ private:
     TaskLoop *taskLoop;
     TransformerArch *arch;
 public:
-    Inference(TransformerArch* arch, unsigned int nThreads, Transformer* transformer, SocketPool* socketPool);
+    Inference(TransformerArch* arch, unsigned int nThreads, Transformer* transformer, SocketPool* socketPool, Node* node);
     ~Inference();
     float* infer(int token, pos_t pos);
     void getStats(unsigned long* inferenceTime, unsigned long* transferTime);
@@ -71,7 +75,7 @@ private:
     TransformerContext context;
     TaskLoop *taskLoop;
 public:
-    Worker(TransformerArch* arch, unsigned int nThreads, Transformer* transformer, Socket* socket);
+    Worker(TransformerArch* arch, unsigned int nThreads, Transformer* transformer, Socket* socket, Node* node);
     ~Worker();
     void work();
 };

@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <ctime>
 #include "app.hpp"
+#include "all_reduce.hpp"
 
 FloatType parseFloatType(char* val) {
     if (strcmp(val, "f32") == 0) return F32;
@@ -125,7 +126,7 @@ void App::run(AppArgs* args, void (*program)(Inference* inference, SocketPool* s
     Transformer transformer = Transformer::loadRootFromFile(args->modelPath, &spec, socketPool);
     socketPool->setTurbo(true);
 
-    Inference inference = Inference(&arch, args->nThreads, &transformer, socketPool);
+    Inference inference = Inference(&arch, args->nThreads, &transformer, socketPool, &rootNode);
 
     Sampler sampler(spec.vocabSize, args->temperature, args->topp, args->seed);
 
