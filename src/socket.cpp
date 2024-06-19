@@ -26,6 +26,8 @@ typedef SSIZE_T ssize_t;
 
 #define SOCKET_LAST_ERRCODE errno
 #define SOCKET_LAST_ERROR strerror(errno)
+#define HDR_SIZE_BYTE 0 // header size, also the condition for processing header
+const char HDR_DATA = 0x80; // header content
 
 static inline bool isEagainError() {
     #ifdef _WIN32
@@ -86,6 +88,7 @@ static inline void setReuseAddr(int socket) {
 }
 
 static inline void writeSocket(int socket, const void* data, size_t size) {
+    if (HDR_SIZE_BYTE > 0) {addHeader(data, size);}
     while (size > 0) {
         int s = send(socket, (const char*)data, size, 0);
         if (s < 0) {
@@ -101,7 +104,22 @@ static inline void writeSocket(int socket, const void* data, size_t size) {
     }
 }
 
+static inline void addHeader(const void*& data, size_t& size) {
+    // Allocate memory for the new buffer for header + data
+    char* buffer = (char*)malloc(HDR_SIZE_BYTE + size);
+    if (!buffer) {
+        throw std::bad_alloc();
+    }
+    // Copy header and data into the new buffer
+    buffer[0] = HDR_DATA;
+    memcpy(buffer + HDR_SIZE_BYTE, data, size);
+    // Update data and size to new buffer
+    data = buffer;
+    size = HDR_SIZE_BYTE + size;
+}
+
 static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned long maxAttempts) {
+    if (HDR_SIZE_BYTE > 0) { readHeader(socket); }
     // maxAttempts = 0 means infinite attempts
     size_t s = size;
     while (s > 0) {
@@ -124,6 +142,27 @@ static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned l
         s -= r;
     }
     return true;
+}
+
+static inline void  readHeader(int socket) {
+    // First, read the header
+    char headerdata[HDR_SIZE_BYTE];
+    char* header = headerdata;
+    size_t headerSize = HDR_SIZE_BYTE;
+    while (headerSize > 0) {
+        int r = recv(socket, header, headerSize, 0);
+        if (r < 0) {
+            if (isEagainError()) {
+                continue;
+            }
+            throw ReadSocketException(0, "Error reading header from socket");
+        } else if (r == 0) {
+            throw ReadSocketException(0, "Socket closed while reading header");
+        }
+        header += r;
+        headerSize -= r;
+    }
+    // the `header` pointer is not useful 
 }
 
 static inline void readSocket(int socket, void* data, size_t size) {
@@ -223,6 +262,7 @@ void SocketPool::writeMany(unsigned int n, SocketIo* ios) {
         SocketIo* io = &ios[i];
         assert(io->socketIndex >= 0 && io->socketIndex < nSockets);
         sentBytes += io->size;
+        if (HDR_SIZE_BYTE > 0) {addHeader(io->data, io->size);}
     }
     do {
         isWriting = false;
@@ -253,6 +293,7 @@ void SocketPool::readMany(unsigned int n, SocketIo* ios) {
         SocketIo* io = &ios[i];
         assert(io->socketIndex >= 0 && io->socketIndex < nSockets);
         recvBytes += io->size;
+        if (HDR_SIZE_BYTE > 0) {readHeader(sockets[io->socketIndex]);}
     }
     do {
         isReading = false;
