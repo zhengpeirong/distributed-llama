@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <ctime>
 #include "app.hpp"
+#include "all_reduce.hpp"
 
 FloatType parseFloatType(char* val) {
     if (strcmp(val, "f32") == 0) return F32;
@@ -110,7 +111,10 @@ void App::run(AppArgs* args, void (*program)(Inference* inference, SocketPool* s
 
     SocketPool* socketPool = SocketPool::connect(args->nWorkers, args->workerHosts, args->workerPorts);
     unsigned int nSlices = args->nWorkers + 1;
-
+    // create rootNode to build topology
+    Node rootNode(AllReduceType::RingReduce, socketPool, nSlices);
+    rootNode.sendCommPackage(nSlices);
+    rootNode.proceedIfAllSuccess(nSlices-1);
     TransformerSpec spec = Transformer::loadSpecFromFile(args->modelPath, nSlices, args->weightsFloatType, args->bufferFloatType);
     TransformerArch arch = TransformerArchFactory::create(&spec);
     Tokenizer tokenizer(args->tokenizerPath, spec.vocabSize);
@@ -122,7 +126,7 @@ void App::run(AppArgs* args, void (*program)(Inference* inference, SocketPool* s
     Transformer transformer = Transformer::loadRootFromFile(args->modelPath, &spec, socketPool);
     socketPool->setTurbo(true);
 
-    Inference inference = Inference(&arch, args->nThreads, &transformer, socketPool);
+    Inference inference = Inference(&arch, args->nThreads, &transformer, socketPool, &rootNode);
 
     Sampler sampler(spec.vocabSize, args->temperature, args->topp, args->seed);
 

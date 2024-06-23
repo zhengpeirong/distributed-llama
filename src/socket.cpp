@@ -118,7 +118,7 @@ static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned l
             }
             throw ReadSocketException(0, "Error reading from socket");
         } else if (r == 0) {
-            throw ReadSocketException(0, "Socket closed");
+            // throw ReadSocketException(0, "Socket closed");
         }
         data = (char*)data + r;
         s -= r;
@@ -160,6 +160,8 @@ WriteSocketException::WriteSocketException(int code, const char* message) {
 SocketPool* SocketPool::connect(unsigned int nSockets, char** hosts, int* ports) {
     int* sockets = new int[nSockets];
     struct sockaddr_in addr;
+    std::vector<std::string> hostsVec;
+    std::vector<int> portsVec;
 
     for (unsigned int i = 0; i < nSockets; i++) {
         memset(&addr, 0, sizeof(addr));
@@ -180,8 +182,27 @@ SocketPool* SocketPool::connect(unsigned int nSockets, char** hosts, int* ports)
         setNoDelay(clientSocket);
         setQuickAck(clientSocket);
         sockets[i] = clientSocket;
+        hostsVec.push_back(hosts[i]);
+        portsVec.push_back(ports[i]);
     }
-    return new SocketPool(nSockets, sockets);
+    return new SocketPool(nSockets, sockets,hostsVec,portsVec);
+}
+
+std::string SocketPool::getHost(unsigned int socketIndex) const {
+    return hosts[socketIndex];
+}
+
+int SocketPool::getPort(unsigned int socketIndex) const {
+    return ports[socketIndex];
+}
+
+SocketPool::SocketPool(unsigned int nSockets, int* sockets,std::vector<std::string> hosts,std::vector<int> ports){
+    this->nSockets = nSockets;
+    this->sockets = sockets;
+    this->sentBytes.exchange(0);
+    this->recvBytes.exchange(0);
+    this->hosts = hosts;
+    this->ports = ports;
 }
 
 SocketPool::SocketPool(unsigned int nSockets, int* sockets) {
