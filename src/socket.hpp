@@ -6,6 +6,9 @@
 #include <exception>
 #include <vector>
 
+#define HDR_SIZE_BYTE 0 // header size, also the condition for processing header
+const char HDR_DATA = 0x80; // header content
+
 void initSockets();
 void cleanupSockets();
 

@@ -27,9 +27,9 @@ To view in `Wireshark`, paste `tcp.analysis.retransmission`.
 ## Result
 
 
-| Model      | 2 x Container                                                   | 4 x Container                                                       | 8 x Container                                                       |
+| Model\Device      | 2 x Container                                                   | 4 x Container                                                       | 8 x Container                                                       |
 | ---------- | --------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Llama 2 8B | **394.03 ms**<br><sub><sup>I: 386.66 ms, T: 6.91 ms</sup></sub> | **353.66 ms** 🔥<br><sub><sup>I: 281.84 ms, T: 71.22 ms</sup></sub> | **2691.47 ms**<br><sub><sup>I: 214.19 ms, T: 2476.84 ms</sup></sub> |
+| Llama3-8B-int4 | **394.03 ms**<br><sub><sup>I: 386.66 ms, T: 6.91 ms</sup></sub> | **353.66 ms** 🔥<br><sub><sup>I: 281.84 ms, T: 71.22 ms</sup></sub> | **2691.47 ms**<br><sub><sup>I: 214.19 ms, T: 2476.84 ms</sup></sub> |
 
 
 ### assign single CPU for each container

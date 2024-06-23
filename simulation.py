@@ -66,7 +66,6 @@ def build_and_start_containers_net(net, num_workers):
     delay2='0ms'
     max_queue_size_1=40//(num_workers+1) # 84 is the number of TCP packets for the `GS205` Buffer Memory 1Mbit
     max_queue_size_2=84//(num_workers+1)
-    queue_size2=100
 
     net.addLink(inference_container, switch, cls=TCLink,delay=delay1, bw=bw1, max_queue_size=max_queue_size_1)
     # net.addLink(inference_container, switch)

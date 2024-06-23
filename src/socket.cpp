@@ -26,9 +26,6 @@ typedef SSIZE_T ssize_t;
 
 #define SOCKET_LAST_ERRCODE errno
 #define SOCKET_LAST_ERROR strerror(errno)
-#define HDR_SIZE_BYTE 0 // header size, also the condition for processing header
-const char HDR_DATA = 0x80; // header content
-
 static inline bool isEagainError() {
     #ifdef _WIN32
     return WSAGetLastError() == WSAEWOULDBLOCK;
