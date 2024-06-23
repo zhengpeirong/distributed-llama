@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <ctime>
 #include "tasks.hpp"
+#include "funcs.hpp"
 
 TransformerArch::TransformerArch() {
     inference.nTasks = 0;
@@ -121,6 +122,83 @@ void syncMissingSlicesOfSlicedBuffer(unsigned int nThreads, unsigned int threadI
     }
 }
 
+
+// Now start ring. At every step, for every rank, we iterate through
+// segments with wraparound and send and recv from our neighbors and reduce
+// locally. At the i'th iteration, sends segment (rank - i) and receives
+// segment (rank - i - 1).
+void reduceScatter(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t bufferIndex) {
+    unsigned int nSlices = ctx->transformer->spec->nSlices;
+    size_t sliceBytes = ctx->transformer->buffer->getSlicedBytes(bufferIndex);
+    unsigned int sliceIndex = ctx->transformer->sliceIndex;
+    char* buffer = ctx->transformer->buffer->getSliced(bufferIndex, sliceIndex);
+
+    for (unsigned int i = 0; i < nSlices - 1; i++) {
+        int recvChunk = (sliceIndex - i - 1 + nSlices) % nSlices;
+        int sendChunk = (sliceIndex - i + nSlices) % nSlices;
+
+        char* sendSlice = ctx->transformer->buffer->getSliced(bufferIndex, sendChunk);
+
+        // use two threads to send & recv
+        if (threadIndex == 0) {
+            // Thread 0: Sending data
+            ctx->node->send(sendSlice, sliceBytes);
+        } else if (threadIndex == 1) {
+            // Thread 1: Receiving data
+            char* nodeRecvBuffer = new char[sliceBytes];
+            ctx->node->recv(nodeRecvBuffer, sliceBytes);
+            ctx->node->storeRecvBuffer(nodeRecvBuffer); // Store received data on the node
+        }
+
+        // Wait for communication to finish
+        ctx->barrier->wait();
+
+        // All threads access the received data from the node
+        const char* recvSlice = ctx->node->getRecvBuffer();
+        add(reinterpret_cast<float*>(buffer), reinterpret_cast<const float*>(recvSlice), sliceBytes / sizeof(float), nThreads, threadIndex);
+
+        // Wait again to synchronize all threads
+        ctx->barrier->wait();
+
+        // Clear received data
+        if (threadIndex == 1) {
+            ctx->node->clearRecvBuffer(); // Clear the buffer after use
+        }
+    }
+}
+
+
+
+// Now start pipelined ring allgather. At every step, for every rank, we
+// iterate through segments with wraparound and send and recv from our
+// neighbors. At the i'th iteration, rank r, sends segment (rank + 1 - i)
+// and receives segment (rank - i).
+void allGather(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t bufferIndex) {
+    unsigned int nSlices = ctx->transformer->spec->nSlices;
+    size_t sliceBytes = ctx->transformer->buffer->getSlicedBytes(bufferIndex);
+    unsigned int sliceIndex = ctx->transformer->sliceIndex;
+    char* buffer = ctx->transformer->buffer->getSliced(bufferIndex, sliceIndex);
+
+    for (unsigned int i = 0; i < nSlices - 1; i++) {
+        int sendChunk = (sliceIndex - i + 1 + nSlices) % nSlices;
+        int recvChunk = (sliceIndex - i + nSlices) % nSlices;
+
+        char* sendSlice = ctx->transformer->buffer->getSliced(bufferIndex, sendChunk);
+        char* recvSlice = ctx->transformer->buffer->getSliced(bufferIndex, recvChunk);
+
+        if (threadIndex == 0) {
+            ctx->node->send(sendSlice, sliceBytes);
+        } else if (threadIndex == 1) {
+            ctx->node->recv(recvSlice, sliceBytes);
+        }
+
+        // wait communication finished
+        ctx->barrier->wait();
+
+    }
+}
+
+
 void quantizeUnitBuffer(unsigned int nThreads, unsigned int threadIndex, TransformerContext* ctx, uint8_t sourceBufferIndex, uint8_t targetBufferIndex) {
     if (ctx->transformer->spec->bufferFloatType == F32) return;
     assert(ctx->transformer->spec->bufferFloatType == Q80);
@@ -181,13 +259,15 @@ bool tryWaitForPos(Transformer* transformer, Socket* socket, unsigned int maxAtt
     return socket->tryRead(&transformer->pos, sizeof(pos_t), maxAttempts);
 }
 
-Inference::Inference(TransformerArch* arch, unsigned int nThreads, Transformer* transformer, SocketPool* socketPool) {
+Inference::Inference(TransformerArch* arch, unsigned int nThreads, Transformer* transformer, SocketPool* socketPool,Node* node) {
     this->transformer = transformer;
     this->socketPool = socketPool;
     this->arch = arch;
     context.transformer = transformer;
     context.socket = NULL;
     context.socketPool = socketPool;
+    context.barrier = new Barrier(nThreads);
+    context.node = node;
     assert(arch->inference.tasks[0].handler == sendPos);
     taskLoop = new TaskLoop(nThreads, arch->inference.nTasks, TASK_N_TYPES, arch->inference.tasks, (void*)&context);
 }
@@ -214,12 +294,14 @@ void Inference::getStats(unsigned long* inferenceTime, unsigned long* transferTi
     *transferTime = taskLoop->executionTime[TASK_TYPE_TRANSFER];
 }
 
-Worker::Worker(TransformerArch* arch, unsigned int nThreads, Transformer* transformer, Socket* socket) {
+Worker::Worker(TransformerArch* arch, unsigned int nThreads, Transformer* transformer, Socket* socket, Node* node) {
     this->transformer = transformer;
     this->socket = socket;
     context.transformer = transformer;
     context.socket = socket;
     context.socketPool = NULL;
+    context.barrier = new Barrier(nThreads);
+    context.node = node;
     taskLoop = new TaskLoop(nThreads, arch->worker.nTasks, TASK_N_TYPES, arch->worker.tasks, (void*)&context);
 }
 
