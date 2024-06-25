@@ -19,7 +19,8 @@
 
 #include "types.hpp"
 #include "../../utils.hpp"
-#include "../../socket.hpp"
+#include "../../socket-tcp.hpp"
+using namespace tcp;
 #include "../../transformer.hpp"
 #include "../../tokenizer.hpp"
 #include "../../app.hpp"
@@ -34,7 +35,7 @@ enum class HttpMethod {
     METHOD_DELETE = 3,
     METHOD_UNKNOWN = 4
 };
-
+namespace tcp{
 class HttpRequest {
 public:
     static HttpRequest read(Socket& socket) {
@@ -441,3 +442,4 @@ int main(int argc, char *argv[]) {
     cleanupSockets();
     return EXIT_SUCCESS;
 }
+} // namespace tcp

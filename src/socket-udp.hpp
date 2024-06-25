@@ -9,23 +9,8 @@
 #include <mutex>
 #include <memory>
 
-// TODO:
-// 1. UDP server 
-    // 1. store every Client's address 
-    // 2. multicast to every Client
-    // 3. receive a single message from the Client simultaneouly
-// 2. UDP Client
-    // 1. store the server's address
-    // 2. send a single message to the Server simultaneouly
-    // 3. receive a single message from the Server
-// 3. Interface:
-    // 1. SocketPool
-    // 2. readMany(), writeMany()
-    // 3. read(), write()
-    // 4. getStats(): to record the `sentBytes` and `recvBytes`
-
-
 namespace udp {
+
 class ReadSocketException : public std::exception {
 public:
     int code;
@@ -51,6 +36,7 @@ public:
         return message.c_str();
     }
 };
+
 struct SocketIo {
     unsigned int socketIndex;
     const void* data;
@@ -100,5 +86,6 @@ public:
     ~SocketServer();
 };
 
+} // namespace udp
+
 #endif // SOCKET_UDP_HPP
-}
