@@ -17,8 +17,8 @@
 #define BUFFER_SIZE 4096
 #define MAX_CLIENTS 15
 
-#define BOARDCAST_IP     "10.0.0.255"
-#define BOARDCAST_PORT   9998
+// #define BOARDCAST_IP     "255.255.255.255"
+// #define BOARDCAST_PORT   9998
 
 namespace udp {
 

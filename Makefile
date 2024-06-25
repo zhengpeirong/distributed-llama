@@ -18,6 +18,8 @@ funcs: src/funcs.cpp
 # 	$(CXX) $(CXXFLAGS) src/funcs-test.cpp -o funcs-test funcs.o
 socket: src/socket.cpp
 	$(CXX) $(CXXFLAGS) -c src/socket.cpp -o socket.o
+socket-udp: src/socket-udp.cpp
+	$(CXX) $(CXXFLAGS) -c src/socket-udp.cpp -o socket-udp.o
 transformer: src/utils.cpp
 	$(CXX) $(CXXFLAGS) -c src/transformer.cpp -o transformer.o
 tasks: src/tasks.cpp
