@@ -9,81 +9,82 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include "socket-udp.hpp"
-
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include "socket-udp.hpp"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 4096
 #define MAX_CLIENTS 15
 
+#define BOARDCAST_IP     "10.0.0.255"
+#define BOARDCAST_PORT   9998
 
-struct sockaddr_in server_addr, *client_addr;
+namespace udp {
 
+Socket::Socket(int port) {
+    socket = ::socket(AF_INET, SOCK_DGRAM, 0);
+    if (socket < 0) {
+        throw std::runtime_error("Failed to create socket");
+    }
 
-ReadSocketException::ReadSocketException(int code, const char* message) {
-    this->code = code;
-    this->message = message;
+    sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(port);
+
+    if (bind(socket, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        close(socket);
+        throw std::runtime_error("Failed to bind socket");
+    }
 }
-
-WriteSocketException::WriteSocketException(int code, const char* message) {
-    this->code = code;
-    this->message = message;
+Socket::~Socket() {
+    if (socket >= 0) {
+        close(socket);
+    }
 }
-
-SocketPool* SocketPool::connect(unsigned int nSockets, char** hosts, int* ports) {
+// struct sockaddr_in server_addr, *client_addr;
+std::unique_ptr<SocketPool> SocketPool::connect(unsigned int nSockets, char** hosts, int* ports) {
     // Create a socket pool containing n client sockets with the given hosts and ports
-    int* sockets = new int[nSockets];
-    struct sockaddr_in* addrs = new sockaddr_in[nSockets];
+    std::unique_ptr<int[]> sockets(new int[nSockets]);
+    std::unique_ptr<sockaddr_in[]> addrs(new sockaddr_in[nSockets]);
+
 
     for (unsigned int i = 0; i < nSockets; i++) {
+        sockets[i] = socket(AF_INET, SOCK_DGRAM, 0);
+        if (sockets[i] < 0) {
+            throw std::runtime_error("Failed to create socket");
+        }
+
         memset(&addrs[i], 0, sizeof(addrs[i]));
         addrs[i].sin_family = AF_INET;
-        if (inet_pton(AF_INET, hosts[i], &addrs[i].sin_addr) <= 0) {
-            perror("Invalid address/ Address not supported");
-            delete[] sockets;
-            delete[] addrs;
-            return nullptr;
-        }
         addrs[i].sin_port = htons(ports[i]);
-        // Create a socket
-        int clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
-        if (clientSocket == -1) {
-            perror("Failed to create socket");
-            delete[] sockets;
-            delete[] addrs;
-            return nullptr;
+        if (inet_pton(AF_INET, hosts[i], &addrs[i].sin_addr) <= 0) {
+            throw std::runtime_error("Invalid address");
         }
-        sockets[i] = clientSocket;
-
         // Enable broadcast on the sockets
-        int broadcastEnable = 1;
-        if (setsockopt(sockets[i], SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable)) < 0) {
-            perror("Error enabling broadcast");
-            throw std::runtime_error("Error enabling broadcast");
-        }
+        // int broadcastEnable = 1;
+        // if (setsockopt(sockets[i], SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable)) < 0) {
+        //     perror("Error enabling broadcast");
+        //     throw std::runtime_error("Error enabling broadcast");
+        // }
     }
-    return new SocketPool(nSockets, sockets, addrs);
+
+    return std::unique_ptr<SocketPool>(new SocketPool(nSockets, std::move(sockets), std::move(addrs)));
 }
 
 
-SocketPool::SocketPool(unsigned int nSockets, int* sockets, sockaddr_in* addrs) {
-    this->nSockets = nSockets;
-    this->sockets = sockets;
-    this->addrs = addrs;
-    this->sentBytes.exchange(0);
-    this->recvBytes.exchange(0);
-}
+SocketPool::SocketPool(unsigned int nSockets, std::unique_ptr<int[]> sockets, std::unique_ptr<sockaddr_in[]> addrs)
+    : nSockets(nSockets), sockets(std::move(sockets)), addrs(std::move(addrs)), sentBytes(0), recvBytes(0) {}
 
 SocketPool::~SocketPool() {
-    for (unsigned int i = 0; i < nSockets; i++) {
-        close(sockets[i]);
+    for (unsigned int i = 0; i < nSockets; ++i) {
+        if (sockets[i] >= 0) {
+            close(sockets[i]);
+        }
     }
-    delete[] sockets;
-    delete[] addrs;
 }
-
 void SocketPool::write(unsigned int socketIndex, const void* data, size_t size) {
     assert(socketIndex < nSockets);
 
@@ -101,13 +102,11 @@ void SocketPool::write(unsigned int socketIndex, const void* data, size_t size) 
 }
 void SocketPool::read(unsigned int socketIndex, void* data, size_t size) {
     assert(socketIndex < nSockets);
-    recvBytes += size;
 
     size_t totalReceived = 0;
     struct sockaddr_in from;
     socklen_t fromlen = sizeof(from);
-    // TODO: set a timeout for the recvfrom call
-    // Set socket to non-blocking mode
+
     int flags = fcntl(sockets[socketIndex], F_GETFL, 0);
     fcntl(sockets[socketIndex], F_SETFL, flags | O_NONBLOCK);
 
@@ -115,12 +114,11 @@ void SocketPool::read(unsigned int socketIndex, void* data, size_t size) {
         ssize_t received = recvfrom(sockets[socketIndex], (char*)data + totalReceived, size - totalReceived, 0, 
                                     (struct sockaddr*)&from, &fromlen);
         if (received < 0) {
-            if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                // No data available, sleep for a short period and try again
-                usleep(1000); // Sleep for 1 millisecond
+            if (errno == EWOULDBLOCK || errno == EAGAIN || errno == EINTR) {
+                usleep(1000);
                 continue;
             } else {
-                throw ReadSocketException(errno, "Error reading from socket");
+                throw ReadSocketException(errno, strerror(errno));
             }
         } else if (received == 0) {
             throw ReadSocketException(0, "Socket closed");
@@ -128,8 +126,8 @@ void SocketPool::read(unsigned int socketIndex, void* data, size_t size) {
         totalReceived += received;
     }
 
-    // Restore socket to blocking mode
     fcntl(sockets[socketIndex], F_SETFL, flags);
+    recvBytes += totalReceived;
 }
 
 
@@ -240,7 +238,66 @@ void SocketPool::getStats(size_t* sentBytes, size_t* recvBytes) {
     *sentBytes = this->sentBytes;
     *recvBytes = this->recvBytes;
 }
+SocketServer::SocketServer(int port) {
+    socket = ::socket(AF_INET, SOCK_DGRAM, 0);
+    if (socket < 0) {
+        throw std::runtime_error("Failed to create socket");
+    }
+
+    sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(port);
+
+    if (bind(socket, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        close(socket);
+        throw std::runtime_error("Failed to bind socket");
+    }
+}
 
 SocketServer::~SocketServer() {
-    close(socket);
+    if (socket >= 0) {
+        close(socket);
+    }
 }
+
+void Socket::write(const void* data, size_t size, sockaddr_in addr) {
+    size_t totalSent = 0;
+    while (totalSent < size) {
+        ssize_t sent = sendto(socket, (const char*)data + totalSent, size - totalSent, 0, 
+                              (struct sockaddr*)&addr, sizeof(addr));
+        if (sent == -1) {
+            throw WriteSocketException(errno, strerror(errno));
+        }
+        totalSent += sent;
+    }
+}
+
+void Socket::read(void* data, size_t size) {
+    size_t totalReceived = 0;
+    struct sockaddr_in from;
+    socklen_t fromlen = sizeof(from);
+
+    int flags = fcntl(socket, F_GETFL, 0);
+    fcntl(socket, F_SETFL, flags | O_NONBLOCK);
+
+    while (totalReceived < size) {
+        ssize_t received = recvfrom(socket, (char*)data + totalReceived, size - totalReceived, 0, 
+                                    (struct sockaddr*)&from, &fromlen);
+        if (received < 0) {
+            if (errno == EWOULDBLOCK || errno == EAGAIN || errno == EINTR) {
+                usleep(1000);
+                continue;
+            } else {
+                throw ReadSocketException(errno, strerror(errno));
+            }
+        } else if (received == 0) {
+            throw ReadSocketException(0, "Socket closed");
+        }
+        totalReceived += received;
+    }
+
+    fcntl(socket, F_SETFL, flags);
+}
+}// namespace udp

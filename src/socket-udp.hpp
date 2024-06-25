@@ -6,6 +6,8 @@
 #include <exception>
 #include <vector>
 #include <netinet/in.h>
+#include <mutex>
+#include <memory>
 
 // TODO:
 // 1. UDP server 
@@ -22,26 +24,33 @@
     // 3. read(), write()
     // 4. getStats(): to record the `sentBytes` and `recvBytes`
 
-// void initSockets();
-// void cleanupSockets();
 
 namespace udp {
 class ReadSocketException : public std::exception {
 public:
     int code;
-    const char* message;
-    // TODO: change the definition
-    ReadSocketException(int code, const char* message);
+    std::string message;
+
+    ReadSocketException(int code, const std::string& message)
+        : code(code), message(message) {}
+
+    const char* what() const noexcept override {
+        return message.c_str();
+    }
 };
 
 class WriteSocketException : public std::exception {
 public:
     int code;
-    const char* message;
-    // TODO: change the definition
-    WriteSocketException(int code, const char* message);
-};
+    std::string message;
 
+    WriteSocketException(int code, const std::string& message)
+        : code(code), message(message) {}
+
+    const char* what() const noexcept override {
+        return message.c_str();
+    }
+};
 struct SocketIo {
     unsigned int socketIndex;
     const void* data;
@@ -51,23 +60,21 @@ struct SocketIo {
 
 class SocketPool {
 private:
-    int* sockets;
-    struct sockaddr_in* addrs;  // Store addresses
+    std::unique_ptr<int[]> sockets;
+    std::unique_ptr<sockaddr_in[]> addrs; // Store addresses of the sockets
     std::atomic_uint sentBytes;
     std::atomic_uint recvBytes;
+    std::mutex mtx;  // 保护共享资源
 
 public:
-    // connect of `UDP` is actually initializing the SocketPool
-    static SocketPool* connect(unsigned int nSockets, char** hosts, int* ports);
+    static std::unique_ptr<SocketPool> connect(unsigned int nSockets, char** hosts, int* ports);
     unsigned int nSockets;
 
-    SocketPool(unsigned int nSockets, int* sockets, struct sockaddr_in* addrs);
+    SocketPool(unsigned int nSockets, std::unique_ptr<int[]> sockets, std::unique_ptr<sockaddr_in[]> addrs);
     ~SocketPool();
 
-    // void setTurbo(bool enabled);
     void write(unsigned int socketIndex, const void* data, size_t size);
     void read(unsigned int socketIndex, void* data, size_t size);
-    // broadcast the data to all the sockets
     void writeMany(unsigned int n, SocketIo* ios);
     void readMany(unsigned int n, SocketIo* ios);
     void getStats(size_t* sentBytes, size_t* recvBytes);
@@ -81,11 +88,8 @@ public:
     Socket(int socket);
     ~Socket();
 
-    // void setTurbo(bool enabled);
-    void write(const void* data, size_t size);
+    void write(const void* data, size_t size, sockaddr_in addr);
     void read(void* data, size_t size);
-    // bool tryRead(void* data, size_t size, unsigned long maxAttempts);
-    // std::vector<char> readHttpRequest();
 };
 
 class SocketServer {
@@ -94,7 +98,6 @@ private:
 public:
     SocketServer(int port);
     ~SocketServer();
-    // Socket accept();
 };
 
 #endif // SOCKET_UDP_HPP
