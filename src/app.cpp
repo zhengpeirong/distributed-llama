@@ -120,7 +120,6 @@ void App::run(AppArgs* args, void (*program)(Inference* inference, SocketPool* s
     }
 
     Transformer transformer = Transformer::loadRootFromFile(args->modelPath, &spec, socketPool);
-    socketPool->setTurbo(true);
 
     Inference inference = Inference(&arch, args->nThreads, &transformer, socketPool);
 

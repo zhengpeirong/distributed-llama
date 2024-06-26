@@ -85,7 +85,7 @@ void syncSliceOfSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, Tr
 
         // worker
         char* buffer = ctx->transformer->buffer->getSliced(bufferIndex, ctx->transformer->sliceIndex);
-        ctx->socket->write(buffer, bufferBytes);
+        ctx->socket->write(buffer, bufferBytes,ctx->root_addr);
     }
 }
 
@@ -177,10 +177,6 @@ void sendPos(TASK_ARGS) {
     }
 }
 
-bool tryWaitForPos(Transformer* transformer, Socket* socket, unsigned int maxAttempts) {
-    return socket->tryRead(&transformer->pos, sizeof(pos_t), maxAttempts);
-}
-
 Inference::Inference(TransformerArch* arch, unsigned int nThreads, Transformer* transformer, SocketPool* socketPool) {
     this->transformer = transformer;
     this->socketPool = socketPool;
@@ -228,28 +224,8 @@ Worker::~Worker() {
 }
 
 void Worker::work() {
-    const unsigned long maxAttempts = 10000;
-
-    bool turbo = false;
     while (true) {
-        const clock_t start = clock();
-
-        while (!tryWaitForPos(transformer, socket, maxAttempts)) {
-            if (turbo) {
-                // After one second of waiting with non-blocking read, we switch to blocking mode to not burn CPU.
-                if (clock() - start > CLOCKS_PER_SEC) {
-                    socket->setTurbo(false);
-                    turbo = false;
-                    printf("🚁 Socket is in blocking mode\n");
-                }
-            }
-        }
-        if (!turbo) {
-            socket->setTurbo(true);
-            turbo = true;
-            printf("🚁 Socket is in non-blocking mode\n");
-        }
-
+        socket->read(&transformer->pos, sizeof(pos_t));
         context.currentBlockIndex = 0;
         taskLoop->run();
     }

@@ -93,15 +93,13 @@ static inline bool readSocket(int socket, void* data, size_t size, unsigned long
 }
 
 void initSockets() {
-    return;
 }
 
 void cleanupSockets() {
-    return;
 }
 
 
-std::unique_ptr<SocketPool> SocketPool::connect(unsigned int nSockets, char** hosts, int* ports) {
+SocketPool* SocketPool::connect(unsigned int nSockets, char** hosts, int* ports) {
     // Create a socket pool containing n client sockets with the given hosts and ports
     std::unique_ptr<int[]> sockets(new int[nSockets]);
     std::unique_ptr<sockaddr_in[]> addrs(new sockaddr_in[nSockets]);
@@ -117,7 +115,7 @@ std::unique_ptr<SocketPool> SocketPool::connect(unsigned int nSockets, char** ho
             throw std::runtime_error("Invalid address");
         }
     }
-    return std::unique_ptr<SocketPool>(new SocketPool(nSockets, std::move(sockets), std::move(addrs)));
+    return new SocketPool(nSockets, std::move(sockets), std::move(addrs)); 
 }
 
 SocketPool::SocketPool(unsigned int nSockets, std::unique_ptr<int[]> sockets, std::unique_ptr<sockaddr_in[]> addrs)
@@ -217,7 +215,8 @@ void SocketPool::getStats(size_t* sentBytes, size_t* recvBytes) {
     this->recvBytes.exchange(0);
 }
 
-Socket SocketServer::accept() {return;
+Socket SocketServer::accept() {
+    return Socket(0);
 }
 
 Socket::Socket(int socket) {

@@ -15,6 +15,7 @@ struct TransformerContext {
     Socket* socket;
     SocketPool* socketPool;
     unsigned int currentBlockIndex;
+    sockaddr_in root_addr;
 };
 
 typedef void (InferenceInitializer)(TransformerContext* context);
