@@ -576,9 +576,9 @@ static size_t loadSlicedMatmulWeights(uint8_t nSlices, MatmulSlice* slice, char*
         for (uint8_t s = 0; s < nSlices; s++) {
             uint8_t sliceIndex = (s + 1) % nSlices; // Root slice must be loaded last because we want keep root weights in the memory.
             loadedBytes += slice->splitWeights(sliceIndex, temp, *weights0);
-            if (sliceIndex > 0) {
-                unsigned int socketIndex = sliceIndex - 1;
-                socketPool->write(socketIndex, *weights0, slice->sliceBytes);
+            if (SEND_WEIGHTS && sliceIndex > 0){
+                    unsigned int socketIndex = sliceIndex - 1;
+                    socketPool->write(socketIndex, *weights0, slice->sliceBytes);
             }
         }
 
@@ -689,6 +689,26 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, SocketPool*
     return transformer;
 }
 
+void saveWeightsToFile(const char* filePath, const char* weights, size_t size) {
+    FILE* file = fopen(filePath, "ab"); // Append mode
+    if (file == NULL) {
+        throw std::runtime_error("Cannot open file to save weights");
+    }
+
+    size_t written = fwrite(weights, 1, size, file);
+    if (written != size) {
+        throw std::runtime_error("Failed to write all weights to file");
+    }
+
+    fclose(file);
+}
+
+size_t readAndSaveWeights(MatmulSlice* slice, char* buffer, Socket* socket, const char* filePath) {
+    size_t bytesRead = readSlicedMatmulWeights(slice, buffer, socket);
+    saveWeightsToFile(filePath, buffer, slice->sliceBytes);
+    return bytesRead;
+}
+
 Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
     uint8_t sliceIndex;
     socket->read((char*)&sliceIndex, sizeof(uint8_t));
@@ -699,30 +719,93 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
 
     assert(sliceIndex >= 1);
     Transformer transformer(spec, sliceIndex);
+    // Define a file path to save the weights
+    char filePath[256];
+    snprintf(filePath, sizeof(filePath), "weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
 
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
         size_t blockBytes = 0;
         long t0 = timeMs();
-        blockBytes += readSlicedMatmulWeights(block->q0Slice, block->q0, socket);
-        blockBytes += readSlicedMatmulWeights(block->k0Slice, block->k0, socket);
-        blockBytes += readSlicedMatmulWeights(block->v0Slice, block->v0, socket);
-        blockBytes += readSlicedMatmulWeights(block->wo0Slice, block->wo0, socket);
+
+        blockBytes += readAndSaveWeights(block->q0Slice, block->q0, socket, filePath);
+        blockBytes += readAndSaveWeights(block->k0Slice, block->k0, socket, filePath);
+        blockBytes += readAndSaveWeights(block->v0Slice, block->v0, socket, filePath);
+        blockBytes += readAndSaveWeights(block->wo0Slice, block->wo0, socket, filePath);
 
         if (spec->nExperts > 0) {
             for (int e = 0; e < spec->nExperts; e++) {
-                blockBytes += readSlicedMatmulWeights(block->moeUpAndGate0Slice, block->moeUp[e], socket);
-                blockBytes += readSlicedMatmulWeights(block->moeUpAndGate0Slice, block->moeGate[e], socket);
-                blockBytes += readSlicedMatmulWeights(block->moeDown0Slice, block->moeDown[e], socket);
+                blockBytes += readAndSaveWeights(block->moeUpAndGate0Slice, block->moeUp[e], socket, filePath);
+                blockBytes += readAndSaveWeights(block->moeUpAndGate0Slice, block->moeGate[e], socket, filePath);
+                blockBytes += readAndSaveWeights(block->moeDown0Slice, block->moeDown[e], socket, filePath);
             }
         } else {
-            blockBytes += readSlicedMatmulWeights(block->w10Slice, block->w10, socket);
-            blockBytes += readSlicedMatmulWeights(block->w20Slice, block->w20, socket);
-            blockBytes += readSlicedMatmulWeights(block->w30Slice, block->w30, socket);
+            blockBytes += readAndSaveWeights(block->w10Slice, block->w10, socket, filePath);
+            blockBytes += readAndSaveWeights(block->w20Slice, block->w20, socket, filePath);
+            blockBytes += readAndSaveWeights(block->w30Slice, block->w30, socket, filePath);
         }
 
         float kbs = blockBytes / (float)(timeMs() - t0);
         printf("⏩ Received %ld kB for block %d (%.0f kB/s)\n", blockBytes / 1024, i, kbs);
+    }
+    return transformer;
+}
+void loadWeightsFromFile(const char* filePath, char* buffer, size_t size) {
+    FILE* file = fopen(filePath, "rb");
+    if (file == NULL) {
+        throw std::runtime_error("Cannot open file to read weights");
+    }
+
+    size_t read = fread(buffer, 1, size, file);
+    if (read != size) {
+        throw std::runtime_error("Failed to read all weights from file");
+    }
+
+    fclose(file);
+}
+
+size_t readAndLoadWeights(MatmulSlice* slice, char* buffer, const char* filePath) {
+    loadWeightsFromFile(filePath, buffer, slice->sliceBytes);
+    return slice->sliceBytes;
+}
+
+Transformer Transformer::loadSliceFromFile(TransformerSpec* spec, Socket* socket) {
+    uint8_t sliceIndex;
+    socket->read((char*)&sliceIndex, sizeof(uint8_t));
+    socket->read((char*)spec, sizeof(TransformerSpec));
+    printf("💡 sliceIndex: %d\n", sliceIndex);
+    printf("💡 nSlices: %d\n", spec->nSlices);
+
+    assert(sliceIndex >= 1);
+    Transformer transformer(spec, sliceIndex);
+
+    char filePath[256];
+    snprintf(filePath, sizeof(filePath), "weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
+
+    for (int i = 0; i < spec->nLayers; i++) {
+        TransformerBlock* block = transformer.blocks[i];
+        size_t blockBytes = 0;
+        long t0 = timeMs();
+
+        blockBytes += readAndLoadWeights(block->q0Slice, block->q0, filePath);
+        blockBytes += readAndLoadWeights(block->k0Slice, block->k0, filePath);
+        blockBytes += readAndLoadWeights(block->v0Slice, block->v0, filePath);
+        blockBytes += readAndLoadWeights(block->wo0Slice, block->wo0, filePath);
+
+        if (spec->nExperts > 0) {
+            for (int e = 0; e < spec->nExperts; e++) {
+                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeUp[e], filePath);
+                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeGate[e], filePath);
+                blockBytes += readAndLoadWeights(block->moeDown0Slice, block->moeDown[e], filePath);
+            }
+        } else {
+            blockBytes += readAndLoadWeights(block->w10Slice, block->w10, filePath);
+            blockBytes += readAndLoadWeights(block->w20Slice, block->w20, filePath);
+            blockBytes += readAndLoadWeights(block->w30Slice, block->w30, filePath);
+        }
+
+        float kbs = blockBytes / (float)(timeMs() - t0);
+        printf("⏩ Loaded %ld kB for block %d (%.0f kB/s)\n", blockBytes / 1024, i, kbs);
     }
     return transformer;
 }
