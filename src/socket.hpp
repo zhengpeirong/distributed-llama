@@ -82,7 +82,7 @@ public:
     void setTurbo(bool enabled);
     void write(const void* data, size_t size, sockaddr_in addr);
     void read(void* data, size_t size);
-    // bool tryRead(void* data, size_t size, unsigned long maxAttempts){};
+    bool tryRead(void* data, size_t size, unsigned long maxAttempts);
     // std::vector<char> readHttpRequest(){};
 };
 

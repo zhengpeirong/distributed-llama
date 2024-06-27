@@ -19,7 +19,8 @@
 #define SOCKET_LAST_ERROR strerror(errno)
 
 static inline bool isEagainError() {
-    return SOCKET_LAST_ERRCODE == EAGAIN || SOCKET_LAST_ERRCODE == EWOULDBLOCK;
+    printf("Error code: %d\n", SOCKET_LAST_ERRCODE);
+    return (SOCKET_LAST_ERRCODE == EAGAIN) || (SOCKET_LAST_ERRCODE == EWOULDBLOCK) || (SOCKET_LAST_ERRCODE == EINTR);
 }
 
 static inline void setNonBlocking(int socket, bool enabled) {
@@ -55,7 +56,7 @@ static inline void writeSocket(int socket, const void* data, size_t size, struct
     }
 }
 
-static inline bool readSocket(int socket, void* data, size_t size, unsigned long maxAttempts) {
+static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned long maxAttempts=0) {
     // `maxAttempts` is not used in this function 
     size_t s = size;
     struct sockaddr_in from; // Store the address of the sender
@@ -74,8 +75,10 @@ static inline bool readSocket(int socket, void* data, size_t size, unsigned long
                     }
                 }
                 continue;
+            }else{
+                printf("Not Eagain Error.\n");
+                throw ReadSocketException(errno, "Error reading from socket");
             }
-            throw ReadSocketException(errno, "Error reading from socket");
         } else if (r == 0) {
             // If no data is received or the data size is not as expected, fill with zeros
             printf("No data received.\n");
@@ -92,6 +95,14 @@ static inline bool readSocket(int socket, void* data, size_t size, unsigned long
     return true;
 }
 
+static inline bool readSocket(int socket, void* data, size_t size) {
+    bool success = tryReadSocket(socket, data, size, 0);
+    if (!success) {
+        throw std::runtime_error("Error reading from socket");
+    }else{
+        return success;
+    }
+}
 void initSockets() {
 }
 
@@ -139,7 +150,7 @@ void SocketPool::write(unsigned int socketIndex, const void* data, size_t size) 
 void SocketPool::read(unsigned int socketIndex, void* data, size_t size) {
     assert(socketIndex >= 0 && socketIndex < nSockets);
     recvBytes += size;//TODO: change `size` to the actual size of the received data
-    bool loss = readSocket(sockets[socketIndex], data, size, 0);
+    bool notLoss = readSocket(sockets[socketIndex], data, size);
     // TODO: record the loss rate
 }
 void SocketPool::writeMany(unsigned int n, SocketIo* ios) {
@@ -216,7 +227,7 @@ void SocketPool::getStats(size_t* sentBytes, size_t* recvBytes) {
 }
 
 Socket SocketServer::accept() {
-    return Socket(0);
+    return Socket(socket);
 }
 
 Socket::Socket(int socket) {
@@ -234,8 +245,11 @@ void Socket::write(const void* data, size_t size, sockaddr_in addr) {
     writeSocket(socket, data, size, addr);
 }
 
+bool Socket::tryRead(void* data, size_t size, unsigned long maxAttempts=0) {
+    return tryReadSocket(socket, data, size, maxAttempts);
+}
 void Socket::read(void* data, size_t size) {
-    readSocket(socket, data, size, 0);
+    readSocket(socket, data, size);
 }
 SocketServer::SocketServer(int port) {
     const char* host = "0.0.0.0";
