@@ -286,6 +286,10 @@ bool Socket::tryRead(void* data, size_t size, unsigned long maxAttempts=0) {
     {
         bool result = tryReadSocket(socket, data, size, maxAttempts, &this->root_addr);
         if (result) {
+            printf("Root address initialized.\n");
+            printf("Root address: %s\n", inet_ntoa(this->root_addr.sin_addr));
+            printf("Root port: %d\n", ntohs(this->root_addr.sin_port));
+            printf("Root family: %d\n", this->root_addr.sin_family);
             this->is_root_addr_initialized = true;
             this->root_addr.sin_family = AF_INET;  // Ensure the address family is set correctly.
         }
