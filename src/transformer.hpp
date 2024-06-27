@@ -255,7 +255,8 @@ public:
     static TransformerSpec loadSpecFromFile(const char* path, const unsigned int nSlices, FloatType weightsFloatType, FloatType bufferFloatType);
     static Transformer loadRootFromFile(const char* path, TransformerSpec* spec, SocketPool* socketPool);
     static Transformer loadRoot(char* data, TransformerSpec* spec, SocketPool* socketPool);
-    static Transformer loadSlice(TransformerSpec* spec, Socket* socket);
+    static Transformer loadSliceFromDisk(TransformerSpec *spec, uint8_t sliceIndex, const char *weightFilePath);
+    static Transformer loadSlice(TransformerSpec *spec, Socket *socket);
 
 private:
     Transformer(TransformerSpec* spec, uint8_t sliceIndex);

@@ -567,7 +567,7 @@ TransformerBlock::~TransformerBlock() {
     }
 }
 
-static size_t loadSlicedMatmulWeights(uint8_t nSlices, MatmulSlice* slice, char* weights, char** weights0, SocketPool* socketPool) {
+static size_t loadSlicedMatmulWeights(uint8_t nSlices, MatmulSlice* slice, char* weights, char** weights0) {
 #if ALLOC_WEIGHTS
     if (nSlices > 1) {
         char* temp = NEW_BUFFER(slice->bytes);
@@ -577,10 +577,6 @@ static size_t loadSlicedMatmulWeights(uint8_t nSlices, MatmulSlice* slice, char*
         for (uint8_t s = 0; s < nSlices; s++) {
             uint8_t sliceIndex = (s + 1) % nSlices; // Root slice must be loaded last because we want keep root weights in the memory.
             loadedBytes += slice->splitWeights(sliceIndex, temp, *weights0);
-            if (sliceIndex > 0) {
-                unsigned int socketIndex = sliceIndex - 1;
-                socketPool->write(socketIndex, *weights0, slice->sliceBytes);
-            }
         }
 
         assert(loadedBytes == slice->bytes);
@@ -607,10 +603,10 @@ static size_t loadRootMatmulWeights(char** target, char* source, size_t bytes) {
     return bytes;
 }
 
-static size_t readSlicedMatmulWeights(MatmulSlice* slice, char* weights0, Socket* socket) {
-    socket->read(weights0, slice->sliceBytes);
-    return slice->sliceBytes;
-}
+// static size_t readSlicedMatmulWeights(MatmulSlice* slice, char* weights0, Socket* socket) {
+//     socket->read(weights0, slice->sliceBytes);
+//     return slice->sliceBytes;
+// }
 
 Transformer Transformer::loadRootFromFile(const char* path, TransformerSpec* spec, SocketPool* socketPool) {
     MmapFile file;
@@ -649,23 +645,23 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, SocketPool*
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
 
-        w += loadSlicedMatmulWeights(spec->nSlices, block->q0Slice, w, &block->q0, socketPool);
-        w += loadSlicedMatmulWeights(spec->nSlices, block->k0Slice, w, &block->k0, socketPool);
-        w += loadSlicedMatmulWeights(spec->nSlices, block->v0Slice, w, &block->v0, socketPool);
-        w += loadSlicedMatmulWeights(spec->nSlices, block->wo0Slice, w, &block->wo0, socketPool);
+        w += loadSlicedMatmulWeights(spec->nSlices, block->q0Slice, w, &block->q0);
+        w += loadSlicedMatmulWeights(spec->nSlices, block->k0Slice, w, &block->k0);
+        w += loadSlicedMatmulWeights(spec->nSlices, block->v0Slice, w, &block->v0);
+        w += loadSlicedMatmulWeights(spec->nSlices, block->wo0Slice, w, &block->wo0);
 
         if (spec->nExperts > 0) {
             w += loadRootMatmulWeights(&block->moeRouter, w, block->moeRouterBytes);
 
             for (int e = 0; e < spec->nExperts; e++) {
-                w += loadSlicedMatmulWeights(spec->nSlices, block->moeUpAndGate0Slice, w, &block->moeUp[e], socketPool);
-                w += loadSlicedMatmulWeights(spec->nSlices, block->moeUpAndGate0Slice, w, &block->moeGate[e], socketPool);
-                w += loadSlicedMatmulWeights(spec->nSlices, block->moeDown0Slice, w, &block->moeDown[e], socketPool);
+                w += loadSlicedMatmulWeights(spec->nSlices, block->moeUpAndGate0Slice, w, &block->moeUp[e]);
+                w += loadSlicedMatmulWeights(spec->nSlices, block->moeUpAndGate0Slice, w, &block->moeGate[e]);
+                w += loadSlicedMatmulWeights(spec->nSlices, block->moeDown0Slice, w, &block->moeDown[e]);
             }
         } else {
-            w += loadSlicedMatmulWeights(spec->nSlices, block->w10Slice, w, &block->w10, socketPool);
-            w += loadSlicedMatmulWeights(spec->nSlices, block->w20Slice, w, &block->w20, socketPool);
-            w += loadSlicedMatmulWeights(spec->nSlices, block->w30Slice, w, &block->w30, socketPool);
+            w += loadSlicedMatmulWeights(spec->nSlices, block->w10Slice, w, &block->w10);
+            w += loadSlicedMatmulWeights(spec->nSlices, block->w20Slice, w, &block->w20);
+            w += loadSlicedMatmulWeights(spec->nSlices, block->w30Slice, w, &block->w30);
         }
 
         w += loadRootMatmulWeights((char**)&block->rmsAtt, w, block->rmsAttBytes);
@@ -700,30 +696,53 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
 
     assert(sliceIndex >= 1);
     Transformer transformer(spec, sliceIndex);
+    // TODO: weightFilePath
+    const char* weightFilePath = "./models/tinyllama_1_1b_3t_q40";
+    transformer.loadSliceFromDisk(spec, sliceIndex, weightFilePath);
+    return transformer;
+}
+
+static size_t loadSlicedMatmulWeightsFromFile(uint8_t sliceIndex, MatmulSlice* slice, char* weights0, const char* weightFilePath) {
+    FILE* file = fopen(weightFilePath, "rb");
+    if (!file) {
+        throw std::runtime_error("Cannot open weight file");
+    }
+    fseek(file, slice->sliceBytes * sliceIndex, SEEK_SET);
+    size_t loadedBytes = fread(weights0, 1, slice->sliceBytes, file);
+    fclose(file);
+    return loadedBytes;
+}
+
+Transformer Transformer::loadSliceFromDisk(TransformerSpec* spec, uint8_t sliceIndex, const char* weightFilePath) {
+    printf("💡 sliceIndex: %d\n", sliceIndex);
+    printf("💡 nSlices: %d\n", spec->nSlices);
+
+    assert(sliceIndex >= 1);
+    Transformer transformer(spec, sliceIndex);
 
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
         size_t blockBytes = 0;
         long t0 = timeMs();
-        blockBytes += readSlicedMatmulWeights(block->q0Slice, block->q0, socket);
-        blockBytes += readSlicedMatmulWeights(block->k0Slice, block->k0, socket);
-        blockBytes += readSlicedMatmulWeights(block->v0Slice, block->v0, socket);
-        blockBytes += readSlicedMatmulWeights(block->wo0Slice, block->wo0, socket);
+        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->q0Slice, block->q0, weightFilePath);
+        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->k0Slice, block->k0, weightFilePath);
+        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->v0Slice, block->v0, weightFilePath);
+        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->wo0Slice, block->wo0, weightFilePath);
 
         if (spec->nExperts > 0) {
             for (int e = 0; e < spec->nExperts; e++) {
-                blockBytes += readSlicedMatmulWeights(block->moeUpAndGate0Slice, block->moeUp[e], socket);
-                blockBytes += readSlicedMatmulWeights(block->moeUpAndGate0Slice, block->moeGate[e], socket);
-                blockBytes += readSlicedMatmulWeights(block->moeDown0Slice, block->moeDown[e], socket);
+                blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeUpAndGate0Slice, block->moeUp[e], weightFilePath);
+                blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeUpAndGate0Slice, block->moeGate[e], weightFilePath);
+                blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeDown0Slice, block->moeDown[e], weightFilePath);
             }
         } else {
-            blockBytes += readSlicedMatmulWeights(block->w10Slice, block->w10, socket);
-            blockBytes += readSlicedMatmulWeights(block->w20Slice, block->w20, socket);
-            blockBytes += readSlicedMatmulWeights(block->w30Slice, block->w30, socket);
+            blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w10Slice, block->w10, weightFilePath);
+            blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w20Slice, block->w20, weightFilePath);
+            blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w30Slice, block->w30, weightFilePath);
         }
 
         float kbs = blockBytes / (float)(timeMs() - t0);
-        printf("⏩ Received %ld kB for block %d (%.0f kB/s)\n", blockBytes / 1024, i, kbs);
+        printf("⏩ Loaded %ld kB for block %d (%.0f kB/s)\n", blockBytes / 1024, i, kbs);
     }
     return transformer;
 }
