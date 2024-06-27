@@ -61,6 +61,7 @@ static inline void writeSocket(int socket, const void* data, size_t size, struct
 }
 
 static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned long maxAttempts=0,  struct sockaddr_in* from = nullptr) {
+    printf("Try to read socket.\n");
     size_t s = size;
     // struct sockaddr_in from; // Store the address of the sender
     socklen_t fromlen = from ? sizeof(*from) : 0;  //socklen_t is value/result 
@@ -147,13 +148,30 @@ SocketPool::~SocketPool() {
 void printSend(int socket, const void *data, size_t size, int flags, const struct sockaddr *addr, socklen_t addrlen) {
     // 打印 socket 文件描述符
     printf("Socket: %d\n", socket);
-    // 打印数据缓冲区,二进制数据
-    const unsigned char* byteData = static_cast<const unsigned char*>(data);
-    printf("Data: ");
-    for (size_t i = 0; i < size; ++i) {
-        printf("%02x ", byteData[i]);
-    }
-    printf("\n");
+    // // 打印数据缓冲区,二进制数据
+    // const unsigned char* byteData = static_cast<const unsigned char*>(data);
+    // printf("Data: ");
+    // for (size_t i = 0; i < size; ++i) {
+    //     printf("%02x ", byteData[i]);
+    // }
+    // 假设 data 是一个指向 char 类型数据的指针
+    // const char* byteData = static_cast<const char*>(data);
+    // printf("Data:\n");
+    // for (size_t i = 0; i < size; ++i) {
+    //     // 打印可打印字符，否则打印 '.'
+    //     if (isprint(static_cast<unsigned char>(byteData[i]))) {
+    //         printf("%c", byteData[i]);
+    //     } else {
+    //         printf(".");
+    //     }
+    //     if ((i + 1) % 16 == 0) {
+    //         printf("\n");
+    //     }
+    // }
+    // if (size % 16 != 0) {
+    //     printf("\n");
+    // }
+    // printf("\n");
     // 打印数据大小
     printf("Size: %zu\n", size);
     // 打印 flags 参数
