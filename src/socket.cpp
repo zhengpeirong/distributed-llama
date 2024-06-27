@@ -32,6 +32,14 @@ static inline void setNoDelay(int socket) {
 static inline void setQuickAck(int socket) {
 }
 
+// Method to print root address
+void printRootAddr(sockaddr_in* print_addr = nullptr) {
+    char address_buffer[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(print_addr->sin_addr), address_buffer, INET_ADDRSTRLEN);
+    std::cout << "Root address: " << address_buffer << '\n';
+    std::cout << "Root port: " << ntohs(print_addr->sin_port) << '\n';
+    std::cout << "Root family: " << print_addr->sin_family << '\n';
+}
 static inline void setReuseAddr(int socket) {
     int opt = 1;
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
@@ -57,7 +65,7 @@ static inline void writeSocket(int socket, const void* data, size_t size, struct
         size -= s;
         data = (const char*)data + s;
     }
-    printf("--------Data sent--------.\n");
+    printf("----Data sent.\n");
 }
 
 static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned long maxAttempts=0,  struct sockaddr_in* from = nullptr) {
@@ -97,6 +105,8 @@ static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned l
         data = (char*)data + r;
         s -= r;
     }
+    printf("----Data tryRead.\n");
+    printRootAddr(from);
     return true;
 }
 
@@ -144,6 +154,7 @@ SocketPool::~SocketPool() {
         close(sockets[i]);
     }
 }
+
 
 void printSend(int socket, const void *data, size_t size, int flags, const struct sockaddr *addr, socklen_t addrlen) {
     // 打印 socket 文件描述符
@@ -291,9 +302,6 @@ Socket::~Socket() {
     close(socket);
 }
 
-void Socket::setTurbo(bool enabled) {return;
-}
-
 void Socket::write(const void* data, size_t size) {
     printSend(socket, data, size, 0, (struct sockaddr*)&this->root_addr, sizeof(this->root_addr));
     writeSocket(socket, data, size, this->root_addr);
@@ -305,19 +313,23 @@ bool Socket::tryRead(void* data, size_t size, unsigned long maxAttempts=0) {
         bool result = tryReadSocket(socket, data, size, maxAttempts, &this->root_addr);
         if (result) {
             printf("Root address initialized.\n");
-            printf("Root address: %s\n", inet_ntoa(this->root_addr.sin_addr));
-            printf("Root port: %d\n", ntohs(this->root_addr.sin_port));
-            printf("Root family: %d\n", this->root_addr.sin_family);
+            printRootAddr(&this->root_addr);
             this->is_root_addr_initialized = true;
             this->root_addr.sin_family = AF_INET;  // Ensure the address family is set correctly.
+            printRootAddr(&this->root_addr);
         }
         return result;
     }else{
         return tryReadSocket(socket, data, size, maxAttempts, nullptr);
     }
 }
+
 void Socket::read(void* data, size_t size) {
+    printf("--Reading from socket.\n");
+    printRootAddr(&this->root_addr);
     readSocket(socket, data, size);
+    printf("--Data read.\n");
+    printRootAddr(&this->root_addr);
 }
 SocketServer::SocketServer(int port) {
     const char* host = "0.0.0.0";
@@ -344,6 +356,5 @@ SocketServer::SocketServer(int port) {
 }
 
 SocketServer::~SocketServer() {
-    shutdown(socket, 2);
     close(socket);
 }
