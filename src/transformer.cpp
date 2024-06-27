@@ -697,17 +697,29 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
 }
 
 static size_t loadSlicedMatmulWeightsFromFile(uint8_t sliceIndex, MatmulSlice* slice, char* weights0, const char* weightFilePath) {
+    // 打开权重文件
     FILE* file = fopen(weightFilePath, "rb");
     if (!file) {
         throw std::runtime_error("Cannot open weight file");
     }
-    // TODO: make sure the weight is right
-    fseek(file, slice->sliceBytes * sliceIndex, SEEK_SET);
-    size_t loadedBytes = fread(weights0, 1, slice->sliceBytes, file);
+
+    // 临时缓冲区，用于存储整个权重矩阵
+    char* temp = (char*)malloc(slice->bytes);
+    if (fread(temp, 1, slice->bytes, file) != slice->bytes) {
+        fclose(file);
+        free(temp);
+        throw std::runtime_error("Failed to read weights from file");
+    }
     fclose(file);
+
+    // 分割权重并复制到目标缓冲区
+    size_t loadedBytes = slice->splitWeights(sliceIndex, temp, weights0);
+
+    // 释放临时缓冲区
+    free(temp);
+
     return loadedBytes;
 }
-
 Transformer Transformer::loadSliceFromDisk(TransformerSpec* spec, uint8_t sliceIndex, const char* weightFilePath) {
     printf("💡 sliceIndex: %d\n", sliceIndex);
     printf("💡 nSlices: %d\n", spec->nSlices);
@@ -737,5 +749,6 @@ Transformer Transformer::loadSliceFromDisk(TransformerSpec* spec, uint8_t sliceI
         float kbs = blockBytes / (float)(timeMs() - t0);
         printf("⏩ Loaded %ld kB for block %d (%.0f kB/s)\n", blockBytes / 1024, i, kbs);
     }
+    printf("Start inference\n");
     return transformer;
 }
