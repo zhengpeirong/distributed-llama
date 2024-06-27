@@ -22,7 +22,7 @@ RowMatmulSlice::RowMatmulSlice(FloatType type, int nSlices, int n, int d) {
     this->bytes = getBatchBytes(type, this->n, d);
     this->sliceBytes = getBatchBytes(type, this->n, this->d0);
 }
-
+// copy data from the weights to the weights0
 size_t RowMatmulSlice::splitWeights(uint8_t sliceIndex, char* weights, char* weights0) {
     int numbersPerBatch = getNumbersPerBatch(this->type);
     int batchBytes = getBatchBytes(this->type, numbersPerBatch, 1);
@@ -57,7 +57,7 @@ ColMatmulSlice::ColMatmulSlice(FloatType type, int nSlices, int n, int d) {
     this->bytes = getBatchBytes(type, n, d);
     this->sliceBytes = getBatchBytes(type, this->n0, d);
 }
-
+// copy weights from the weights to the weights0
 size_t ColMatmulSlice::splitWeights(uint8_t sliceIndex, char* weights, char* weights0) {
     int numbersPerBatch = getNumbersPerBatch(this->type);
     int batchBytes = getBatchBytes(this->type, numbersPerBatch, 1);
