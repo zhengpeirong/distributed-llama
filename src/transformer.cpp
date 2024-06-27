@@ -611,7 +611,7 @@ static size_t loadRootMatmulWeights(char** target, char* source, size_t bytes) {
 Transformer Transformer::loadRootFromFile(const char* path, TransformerSpec* spec, SocketPool* socketPool) {
     MmapFile file;
     openMmapFile(&file, path, spec->fileSize);
-
+    printf("📦 %s\n", path);
     char* weights = ((char*)file.data) + spec->headerSize;
     Transformer transformer = Transformer::loadRoot((char*)weights, spec, socketPool);
 
@@ -690,13 +690,9 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
     uint8_t sliceIndex;
     socket->read((char*)&sliceIndex, sizeof(uint8_t));
     socket->read((char*)spec, sizeof(TransformerSpec));
-
-    printf("💡 sliceIndex: %d\n", sliceIndex);
-    printf("💡 nSlices: %d\n", spec->nSlices);
-
     assert(sliceIndex >= 1);
     // TODO: weightFilePath
-    const char* weightFilePath = "./models/tinyllama_1_1b_3t_q40";
+    const char* weightFilePath = "models/tinyllama_1_1b_3t_q40/dllama_model_tinyllama_1_1b_3t_q40.m";
     return loadSliceFromDisk(spec, sliceIndex, weightFilePath);
 }
 
@@ -714,8 +710,6 @@ static size_t loadSlicedMatmulWeightsFromFile(uint8_t sliceIndex, MatmulSlice* s
 Transformer Transformer::loadSliceFromDisk(TransformerSpec* spec, uint8_t sliceIndex, const char* weightFilePath) {
     printf("💡 sliceIndex: %d\n", sliceIndex);
     printf("💡 nSlices: %d\n", spec->nSlices);
-
-    assert(sliceIndex >= 1);
     Transformer transformer(spec, sliceIndex);
 
     for (int i = 0; i < spec->nLayers; i++) {
