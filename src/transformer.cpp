@@ -695,8 +695,7 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
     const char* weightFilePath = "models/tinyllama_1_1b_3t_q40/dllama_model_tinyllama_1_1b_3t_q40.m";
     return loadSliceFromDisk(spec, sliceIndex, weightFilePath);
 }
-
-static size_t loadSlicedMatmulWeightsFromFile(uint8_t sliceIndex, MatmulSlice* slice, char* weights0, const char* weightFilePath) {
+static size_t loadSlicedMatmulWeightsFromFile(uint8_t sliceIndex, MatmulSlice* slice, char** weights0, const char* weightFilePath) {
     // 打开权重文件
     FILE* file = fopen(weightFilePath, "rb");
     if (!file) {
@@ -707,17 +706,17 @@ static size_t loadSlicedMatmulWeightsFromFile(uint8_t sliceIndex, MatmulSlice* s
     char* temp = (char*)malloc(slice->bytes);
     if (fread(temp, 1, slice->bytes, file) != slice->bytes) {
         fclose(file);
-        free(temp);
+        FREE_BUFFER(temp);
         throw std::runtime_error("Failed to read weights from file");
     }
     fclose(file);
 
     // 分割权重并复制到目标缓冲区
-    size_t loadedBytes = slice->splitWeights(sliceIndex, temp, weights0);
+    size_t loadedBytes = slice->splitWeights(sliceIndex, temp, *weights0);
 
     // 释放临时缓冲区
-    free(temp);
-
+    FREE_BUFFER(temp);
+    // TODO: make sure the loadedBytes is correct
     return loadedBytes;
 }
 Transformer Transformer::loadSliceFromDisk(TransformerSpec* spec, uint8_t sliceIndex, const char* weightFilePath) {
@@ -729,21 +728,21 @@ Transformer Transformer::loadSliceFromDisk(TransformerSpec* spec, uint8_t sliceI
         TransformerBlock* block = transformer.blocks[i];
         size_t blockBytes = 0;
         long t0 = timeMs();
-        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->q0Slice, block->q0, weightFilePath);
-        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->k0Slice, block->k0, weightFilePath);
-        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->v0Slice, block->v0, weightFilePath);
-        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->wo0Slice, block->wo0, weightFilePath);
+        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->q0Slice, &block->q0, weightFilePath);
+        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->k0Slice, &block->k0, weightFilePath);
+        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->v0Slice, &block->v0, weightFilePath);
+        blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->wo0Slice, &block->wo0, weightFilePath);
 
         if (spec->nExperts > 0) {
             for (int e = 0; e < spec->nExperts; e++) {
-                blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeUpAndGate0Slice, block->moeUp[e], weightFilePath);
-                blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeUpAndGate0Slice, block->moeGate[e], weightFilePath);
-                blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeDown0Slice, block->moeDown[e], weightFilePath);
+                blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeUpAndGate0Slice, &block->moeUp[e], weightFilePath);
+                blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeUpAndGate0Slice, &block->moeGate[e], weightFilePath);
+                blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeDown0Slice, &block->moeDown[e], weightFilePath);
             }
         } else {
-            blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w10Slice, block->w10, weightFilePath);
-            blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w20Slice, block->w20, weightFilePath);
-            blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w30Slice, block->w30, weightFilePath);
+            blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w10Slice, &block->w10, weightFilePath);
+            blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w20Slice, &block->w20, weightFilePath);
+            blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w30Slice, &block->w30, weightFilePath);
         }
 
         float kbs = blockBytes / (float)(timeMs() - t0);
