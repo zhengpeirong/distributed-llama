@@ -695,11 +695,9 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
     printf("💡 nSlices: %d\n", spec->nSlices);
 
     assert(sliceIndex >= 1);
-    Transformer transformer(spec, sliceIndex);
     // TODO: weightFilePath
     const char* weightFilePath = "./models/tinyllama_1_1b_3t_q40";
-    transformer.loadSliceFromDisk(spec, sliceIndex, weightFilePath);
-    return transformer;
+    return loadSliceFromDisk(spec, sliceIndex, weightFilePath);
 }
 
 static size_t loadSlicedMatmulWeightsFromFile(uint8_t sliceIndex, MatmulSlice* slice, char* weights0, const char* weightFilePath) {
