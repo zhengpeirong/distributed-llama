@@ -266,10 +266,8 @@ Socket SocketServer::accept() {
     return Socket(socket);
 }
 
-Socket::Socket(int socket) {
-    this->socket = socket;
-    bool is_root_addr_initialized = false;
-}
+Socket::Socket(int socket)
+    : socket(socket), is_root_addr_initialized(false), root_addr{}{}
 
 Socket::~Socket() {
     close(socket);
@@ -286,8 +284,12 @@ void Socket::write(const void* data, size_t size) {
 bool Socket::tryRead(void* data, size_t size, unsigned long maxAttempts=0) {
     if (!this->is_root_addr_initialized)
     {
-        return tryReadSocket(socket, data, size, maxAttempts, &this->root_addr);
-        this->is_root_addr_initialized = true;
+        bool result = tryReadSocket(socket, data, size, maxAttempts, &this->root_addr);
+        if (result) {
+            this->is_root_addr_initialized = true;
+            this->root_addr.sin_family = AF_INET;  // Ensure the address family is set correctly.
+        }
+        return result;
     }else{
         return tryReadSocket(socket, data, size, maxAttempts, nullptr);
     }
