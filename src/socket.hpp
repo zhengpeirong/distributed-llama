@@ -74,7 +74,7 @@ public:
 class Socket {
 private:
     int socket;
-    sockaddr_in root_addr;
+    struct sockaddr_in* root_addr;
     bool is_root_addr_initialized;
 public:
     Socket(int socket);

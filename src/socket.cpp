@@ -14,6 +14,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <string.h> 
 
 #define SOCKET_LAST_ERRCODE errno
 #define SOCKET_LAST_ERROR strerror(errno)
@@ -33,12 +34,16 @@ static inline void setQuickAck(int socket) {
 }
 
 // Method to print root address
-void printRootAddr(sockaddr_in* print_addr = nullptr) {
-    char address_buffer[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(print_addr->sin_addr), address_buffer, INET_ADDRSTRLEN);
-    std::cout << "Root address: " << address_buffer << '\n';
-    std::cout << "Root port: " << ntohs(print_addr->sin_port) << '\n';
-    std::cout << "Root family: " << print_addr->sin_family << '\n';
+void printAddr(sockaddr_in* print_addr = nullptr) {
+    if (print_addr) {
+        char address_buffer[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &(print_addr->sin_addr), address_buffer, INET_ADDRSTRLEN);
+        std::cout << "Print address: " << address_buffer << '\n';
+        std::cout << "Print port: " << ntohs(print_addr->sin_port) << '\n';
+        std::cout << "Print family: " << print_addr->sin_family << '\n';
+    } else {
+        std::cout << "print_addr is nullptr.\n";
+    }
 }
 static inline void setReuseAddr(int socket) {
     int opt = 1;
@@ -50,10 +55,11 @@ static inline void setReuseAddr(int socket) {
 
 static inline void writeSocket(int socket, const void* data, size_t size, struct sockaddr_in addr) {
     while (size > 0) {
-        // int s = send(socket, (const char*)data, size, 0);
+        // printf("----Sending data.\n");
+        // printAddr(&addr);
         int s = sendto(socket, (const char*)data, size, 0, \
         (struct sockaddr*)&addr, sizeof(addr));
-        printf("send s: %d\n", s);
+        // printf("send s: %d\n", s);
         if (s < 0) {
             if (isEagainError()) {
                 continue;
@@ -65,20 +71,23 @@ static inline void writeSocket(int socket, const void* data, size_t size, struct
         size -= s;
         data = (const char*)data + s;
     }
-    printf("----Data sent.\n");
+    // printf("----Data sent.\n");
 }
 
-static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned long maxAttempts=0,  struct sockaddr_in* from = nullptr) {
-    printf("Try to read socket.\n");
+static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned long maxAttempts=0, struct sockaddr_in* sender_addr = nullptr) {
+    // printf("Try to read socket.\n");
     size_t s = size;
-    // struct sockaddr_in from; // Store the address of the sender
-    socklen_t fromlen = from ? sizeof(*from) : 0;  //socklen_t is value/result 
-    if (from) {
-        memset(from, 0, sizeof(*from));
-    }
+    // BUG: `from` is a pointer and change the value of `from` will not change the value of `sender_addr`
+    // struct sockaddr_in* from = new struct sockaddr_in; // Store the address of the sender
+    // socklen_t fromlen = from ? sizeof(*from) : 0;  //socklen_t is value/result 
+    struct sockaddr_in from; // Store the address of the sender
+    socklen_t fromlen = sizeof(from); // socklen_t is value/result 
+
     while (s > 0 ) {
         // depends on whether interested in the sender's address or not
-        int r = recvfrom(socket, (char*)data, s, 0, (struct sockaddr*)from, from ? &fromlen : nullptr);
+        // int r = recvfrom(socket, (char*)data, s, 0, (struct sockaddr*)from, from ? &fromlen : nullptr);
+        int r = recvfrom(socket, (char*)data, s, 0, (struct sockaddr*)&from, &fromlen);
+
         if (r < 0) {
             if (isEagainError()) {
                 if (s == size && maxAttempts > 0) {
@@ -105,25 +114,28 @@ static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned l
         data = (char*)data + r;
         s -= r;
     }
-    printf("----Data tryRead.\n");
-    printRootAddr(from);
+    if (sender_addr) {
+        *sender_addr = from; // Correctly update the sender_addr
+        // printf("Sender address is changed.\n");
+        // printf("From:\n");
+        // // printAddr(&from);
+        // printf("Sender:\n");
+        // // printAddr(sender_addr);
+    }
     return true;
 }
 
-static inline bool readSocket(int socket, void* data, size_t size) {
-    bool success = tryReadSocket(socket, data, size, 0);
+static inline bool readSocket(int socket, void* data, size_t size, struct sockaddr_in* sender_addr) {
+    // printf("readSocket starts here.\n");
+    bool success = tryReadSocket(socket, data, size, 0, sender_addr);
     if (!success) {
         throw std::runtime_error("Error reading from socket");
     }else{
         return success;
     }
 }
-void initSockets() {
-}
-
-void cleanupSockets() {
-}
-
+void initSockets() {}
+void cleanupSockets() {}
 
 SocketPool* SocketPool::connect(unsigned int nSockets, char** hosts, int* ports) {
     // Create a socket pool containing n client sockets with the given hosts and ports
@@ -157,37 +169,9 @@ SocketPool::~SocketPool() {
 
 
 void printSend(int socket, const void *data, size_t size, int flags, const struct sockaddr *addr, socklen_t addrlen) {
-    // 打印 socket 文件描述符
     printf("Socket: %d\n", socket);
-    // // 打印数据缓冲区,二进制数据
-    // const unsigned char* byteData = static_cast<const unsigned char*>(data);
-    // printf("Data: ");
-    // for (size_t i = 0; i < size; ++i) {
-    //     printf("%02x ", byteData[i]);
-    // }
-    // 假设 data 是一个指向 char 类型数据的指针
-    // const char* byteData = static_cast<const char*>(data);
-    // printf("Data:\n");
-    // for (size_t i = 0; i < size; ++i) {
-    //     // 打印可打印字符，否则打印 '.'
-    //     if (isprint(static_cast<unsigned char>(byteData[i]))) {
-    //         printf("%c", byteData[i]);
-    //     } else {
-    //         printf(".");
-    //     }
-    //     if ((i + 1) % 16 == 0) {
-    //         printf("\n");
-    //     }
-    // }
-    // if (size % 16 != 0) {
-    //     printf("\n");
-    // }
-    // printf("\n");
-    // 打印数据大小
     printf("Size: %zu\n", size);
-    // 打印 flags 参数
     printf("Flags: %d\n", flags);
-    // 打印 sockaddr 结构体中的地址信息
     if (addr->sa_family == AF_INET) {
         struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
         char ip[INET_ADDRSTRLEN];
@@ -197,7 +181,6 @@ void printSend(int socket, const void *data, size_t size, int flags, const struc
     } else {
         printf("Address: Unknown family %d\n", addr->sa_family);
     }
-    // 打印 sockaddr 结构体的长度
     printf("Address length: %u\n", addrlen);
 }
 
@@ -211,7 +194,7 @@ void SocketPool::write(unsigned int socketIndex, const void* data, size_t size) 
 void SocketPool::read(unsigned int socketIndex, void* data, size_t size) {
     assert(socketIndex >= 0 && socketIndex < nSockets);
     recvBytes += size;//TODO: change `size` to the actual size of the received data
-    bool notLoss = readSocket(sockets[socketIndex], data, size);
+    bool notLoss = readSocket(sockets[socketIndex], data, size, nullptr);
     // TODO: record the loss rate
 }
 void SocketPool::writeMany(unsigned int n, SocketIo* ios) {
@@ -295,41 +278,52 @@ Socket SocketServer::accept() {
     return Socket(socket);
 }
 
-Socket::Socket(int socket)
-    : socket(socket), is_root_addr_initialized(false), root_addr{}{}
+
+Socket::Socket(int socket){
+    this->socket = socket;
+    this->is_root_addr_initialized = false;
+
+    // Allocate memory for root_addr and initialize it
+    this->root_addr = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
+    if (this->root_addr == nullptr) {
+        printf("Memory allocation for root_addr failed.\n");
+        exit(1); // or handle the error appropriately
+    }
+    // To give it some random initial values (for example purposes)
+    this->root_addr->sin_family = AF_INET;
+    this->root_addr->sin_addr.s_addr = htonl(INADDR_ANY); // or use a random IP address
+    this->root_addr->sin_port = htons(0); // or use a random port
+}
 
 Socket::~Socket() {
     close(socket);
 }
 
 void Socket::write(const void* data, size_t size) {
-    printSend(socket, data, size, 0, (struct sockaddr*)&this->root_addr, sizeof(this->root_addr));
-    writeSocket(socket, data, size, this->root_addr);
+    // printf("--write starts here.\n");
+    // printAddr(this->root_addr);
+    // printSend(socket, data, size, 0, (struct sockaddr*)&this->root_addr, sizeof(this->root_addr));
+    writeSocket(socket, data, size, *this->root_addr);
 }
 
 bool Socket::tryRead(void* data, size_t size, unsigned long maxAttempts=0) {
-    if (!this->is_root_addr_initialized)
-    {
-        bool result = tryReadSocket(socket, data, size, maxAttempts, &this->root_addr);
-        if (result) {
-            printf("Root address initialized.\n");
-            printRootAddr(&this->root_addr);
-            this->is_root_addr_initialized = true;
-            this->root_addr.sin_family = AF_INET;  // Ensure the address family is set correctly.
-            printRootAddr(&this->root_addr);
-        }
-        return result;
-    }else{
-        return tryReadSocket(socket, data, size, maxAttempts, nullptr);
-    }
+    return tryReadSocket(socket, data, size, maxAttempts, nullptr);
+    // printf("--tryRead starts here.\n");
 }
 
 void Socket::read(void* data, size_t size) {
-    printf("--Reading from socket.\n");
-    printRootAddr(&this->root_addr);
-    readSocket(socket, data, size);
-    printf("--Data read.\n");
-    printRootAddr(&this->root_addr);
+    // printf("--Reading from socket.\n");
+    // printf(this->is_root_addr_initialized ? "Root address initialized.\n" : "Root address not initialized.\n");
+    if (!this->is_root_addr_initialized)
+    {
+        this->is_root_addr_initialized = true;
+        readSocket(socket, data, size, this->root_addr);
+        this->root_addr = const_cast<sockaddr_in*>(this->root_addr);
+    }else{
+        readSocket(socket, data, size, nullptr);
+    }
+    // printf("--Data read.\n");
+    // printAddr(this->root_addr);
 }
 SocketServer::SocketServer(int port) {
     const char* host = "0.0.0.0";
