@@ -577,8 +577,8 @@ static size_t loadSlicedMatmulWeights(uint8_t nSlices, MatmulSlice* slice, char*
             uint8_t sliceIndex = (s + 1) % nSlices; // Root slice must be loaded last because we want keep root weights in the memory.
             loadedBytes += slice->splitWeights(sliceIndex, temp, *weights0);
             if (SEND_WEIGHTS && sliceIndex > 0){
-                    unsigned int socketIndex = sliceIndex - 1;
-                    socketPool->write(socketIndex, *weights0, slice->sliceBytes);
+                unsigned int socketIndex = sliceIndex - 1;
+                socketPool->write(socketIndex, *weights0, slice->sliceBytes);
             }
         }
 

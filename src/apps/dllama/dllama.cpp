@@ -210,12 +210,7 @@ void worker(AppArgs* args) {
     SocketServer server(args->port);
     Socket socket = server.accept();
     TransformerSpec spec;
-    if (SEND_WEIGHTS) {
-        Transformer transformer = Transformer::loadSlice(&spec, &socket);
-    } else {
-        Transformer transformer = Transformer::loadSliceFromFile(&spec, &socket);
-    }
-    Transformer transformer = Transformer::loadSliceFromFile(&spec, &socket);
+    Transformer transformer = SEND_WEIGHTS? Transformer::loadSlice(&spec, &socket) : Transformer::loadSliceFromFile(&spec, &socket);
     TransformerArch arch = TransformerArchFactory::create(&spec);
 
     Worker worker = Worker(&arch, args->nThreads, &transformer, &socket);
