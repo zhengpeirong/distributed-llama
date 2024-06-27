@@ -48,8 +48,8 @@ struct SocketIo {
 
 class SocketPool {
 private:
-    std::unique_ptr<int[]> sockets;
-    std::unique_ptr<sockaddr_in[]> addrs; // Store addresses of the sockets
+    int* sockets;
+    sockaddr_in* addrs; // Store addresses of the sockets
     std::atomic_uint sentBytes;
     std::atomic_uint recvBytes;
     std::mutex mtx;  // 保护共享资源
@@ -60,7 +60,7 @@ public:
 
     unsigned int nSockets;
 
-    SocketPool(unsigned int nSockets, std::unique_ptr<int[]> sockets, std::unique_ptr<sockaddr_in[]> addrs);
+    SocketPool(unsigned int nSockets, int* sockets, sockaddr_in* addrs);
     ~SocketPool();
 
     void setTurbo();
@@ -74,13 +74,14 @@ public:
 class Socket {
 private:
     int socket;
-
+    sockaddr_in root_addr;
+    bool is_root_addr_initialized;
 public:
     Socket(int socket);
     ~Socket();
 
     void setTurbo(bool enabled);
-    void write(const void* data, size_t size, sockaddr_in addr);
+    void write(const void* data, size_t size);
     void read(void* data, size_t size);
     bool tryRead(void* data, size_t size, unsigned long maxAttempts);
     // std::vector<char> readHttpRequest(){};

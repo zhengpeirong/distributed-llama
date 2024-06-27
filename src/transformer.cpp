@@ -701,6 +701,7 @@ static size_t loadSlicedMatmulWeightsFromFile(uint8_t sliceIndex, MatmulSlice* s
     if (!file) {
         throw std::runtime_error("Cannot open weight file");
     }
+    // TODO: make sure the weight is right
     fseek(file, slice->sliceBytes * sliceIndex, SEEK_SET);
     size_t loadedBytes = fread(weights0, 1, slice->sliceBytes, file);
     fclose(file);

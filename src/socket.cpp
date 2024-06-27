@@ -45,27 +45,31 @@ static inline void writeSocket(int socket, const void* data, size_t size, struct
         // int s = send(socket, (const char*)data, size, 0);
         int s = sendto(socket, (const char*)data, size, 0, \
         (struct sockaddr*)&addr, sizeof(addr));
+        printf("send s: %d\n", s);
         if (s < 0) {
             if (isEagainError()) {
                 continue;
             }
-            throw WriteSocketException(0, "Error writing to socket");
+            else{
+                throw WriteSocketException(errno, "Error writing to socket");
+            }
         }
         size -= s;
         data = (const char*)data + s;
     }
+    printf("--------Data sent--------.\n");
 }
 
-static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned long maxAttempts=0) {
-    // `maxAttempts` is not used in this function 
+static inline bool tryReadSocket(int socket, void* data, size_t size, unsigned long maxAttempts=0,  struct sockaddr_in* from = nullptr) {
     size_t s = size;
-    struct sockaddr_in from; // Store the address of the sender
-    socklen_t fromlen = sizeof(from);  //socklen_t is value/result 
-    memset(&from, 0, sizeof(from));
+    // struct sockaddr_in from; // Store the address of the sender
+    socklen_t fromlen = from ? sizeof(*from) : 0;  //socklen_t is value/result 
+    if (from) {
+        memset(from, 0, sizeof(*from));
+    }
     while (s > 0 ) {
-        // int r = recvfrom(socket, (char*)data, s, 0, (struct sockaddr*)&from, &fromlen);
-        // not interested in the sender's address
-        int r = recvfrom(socket, (char*)data, s, 0, NULL, NULL);
+        // depends on whether interested in the sender's address or not
+        int r = recvfrom(socket, (char*)data, s, 0, (struct sockaddr*)from, from ? &fromlen : nullptr);
         if (r < 0) {
             if (isEagainError()) {
                 if (s == size && maxAttempts > 0) {
@@ -112,8 +116,8 @@ void cleanupSockets() {
 
 SocketPool* SocketPool::connect(unsigned int nSockets, char** hosts, int* ports) {
     // Create a socket pool containing n client sockets with the given hosts and ports
-    std::unique_ptr<int[]> sockets(new int[nSockets]);
-    std::unique_ptr<sockaddr_in[]> addrs(new sockaddr_in[nSockets]);
+    int* sockets(new int[nSockets]);
+    sockaddr_in* addrs(new sockaddr_in[nSockets]);
     for (unsigned int i = 0; i < nSockets; i++) {
         sockets[i] = socket(AF_INET, SOCK_DGRAM, 0);
         if (sockets[i] < 0) {
@@ -126,11 +130,11 @@ SocketPool* SocketPool::connect(unsigned int nSockets, char** hosts, int* ports)
             throw std::runtime_error("Invalid address");
         }
     }
-    return new SocketPool(nSockets, std::move(sockets), std::move(addrs)); 
+    return new SocketPool(nSockets, sockets, addrs); 
 }
 
-SocketPool::SocketPool(unsigned int nSockets, std::unique_ptr<int[]> sockets, std::unique_ptr<sockaddr_in[]> addrs)
-    : nSockets(nSockets), sockets(std::move(sockets)), addrs(std::move(addrs)), sentBytes(0), recvBytes(0) {}
+SocketPool::SocketPool(unsigned int nSockets, int* sockets, sockaddr_in* addrs)
+    : nSockets(nSockets), sockets(sockets), addrs(addrs), sentBytes(0), recvBytes(0) {}
 
 
 SocketPool::~SocketPool() {
@@ -141,9 +145,55 @@ SocketPool::~SocketPool() {
 }
 
 
+void printWrite(unsigned int socketIndex, const void* data, size_t size, sockaddr_in* addrs){
+    printf("Socket index: %d\n", socketIndex);
+    printf("size: %ld\n", size);
+    // 将sockaddr_in结构体转换为字符串
+    char ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(addrs[socketIndex].sin_addr), ip, INET_ADDRSTRLEN);
+    // 打印地址信息
+    printf("addrs[socketIndex]: %s\n", ip);
+    printf("port: %d\n", ntohs(addrs[socketIndex].sin_port));
+    // 打印二进制数据
+    const unsigned char* byteData = static_cast<const unsigned char*>(data);
+    printf("Data: ");
+    for (size_t i = 0; i < size; ++i) {
+        printf("%02x ", byteData[i]);
+    }
+    printf("\n");
+}
+void printSend(int socket, const void *data, size_t size, int flags, const struct sockaddr *addr, socklen_t addrlen) {
+    // 打印 socket 文件描述符
+    printf("Socket: %d\n", socket);
+    // 打印数据缓冲区,二进制数据
+    const unsigned char* byteData = static_cast<const unsigned char*>(data);
+    printf("Data: ");
+    for (size_t i = 0; i < size; ++i) {
+        printf("%02x ", byteData[i]);
+    }
+    printf("\n");
+    // 打印数据大小
+    printf("Size: %zu\n", size);
+    // 打印 flags 参数
+    printf("Flags: %d\n", flags);
+    // 打印 sockaddr 结构体中的地址信息
+    if (addr->sa_family == AF_INET) {
+        struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
+        char ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &(addr_in->sin_addr), ip, INET_ADDRSTRLEN);
+        printf("Address (IPv4): %s\n", ip);
+        printf("Port: %d\n", ntohs(addr_in->sin_port));
+    } else {
+        printf("Address: Unknown family %d\n", addr->sa_family);
+    }
+    // 打印 sockaddr 结构体的长度
+    printf("Address length: %u\n", addrlen);
+}
+
 void SocketPool::write(unsigned int socketIndex, const void* data, size_t size) {
     assert(socketIndex >= 0 && socketIndex < nSockets);
     sentBytes += size;
+    printWrite(socketIndex, data, size, addrs);
     writeSocket(sockets[socketIndex], data, size, addrs[socketIndex]);
 }
 
@@ -167,16 +217,20 @@ void SocketPool::writeMany(unsigned int n, SocketIo* ios) {
             if (io->size > 0) {
                 isWriting = true;
                 int socket = sockets[io->socketIndex];
+                printSend(socket, (const char*)io->data, io->size, 0, 
+                                   (struct sockaddr*)&addrs[io->socketIndex], sizeof(addrs[io->socketIndex]));
                 ssize_t s = sendto(socket, (const char*)io->data, io->size, 0, 
-                                   (struct sockaddr*)&io->addr, sizeof(io->addr));
+                                   (struct sockaddr*)&addrs[io->socketIndex], sizeof(addrs[io->socketIndex]));
 
                 if (s < 0) {
                     if (isEagainError()) {
                         continue;
+                    }else{
+                        printf("Error writing to socket.\n");
+                        throw WriteSocketException(SOCKET_LAST_ERRCODE, SOCKET_LAST_ERROR);
                     }
-                    throw WriteSocketException(SOCKET_LAST_ERRCODE, SOCKET_LAST_ERROR);
                 } else if (s == 0) {
-                    throw WriteSocketException(0, "Socket closed");
+                    throw WriteSocketException(SOCKET_LAST_ERRCODE, "Socket closed");
                 }
                 io->size -= s;
                 io->data = (char*)io->data + s;
@@ -232,6 +286,7 @@ Socket SocketServer::accept() {
 
 Socket::Socket(int socket) {
     this->socket = socket;
+    bool is_root_addr_initialized = false;
 }
 
 Socket::~Socket() {
@@ -241,12 +296,18 @@ Socket::~Socket() {
 void Socket::setTurbo(bool enabled) {return;
 }
 
-void Socket::write(const void* data, size_t size, sockaddr_in addr) {
-    writeSocket(socket, data, size, addr);
+void Socket::write(const void* data, size_t size) {
+    writeSocket(socket, data, size, this->root_addr);
 }
 
 bool Socket::tryRead(void* data, size_t size, unsigned long maxAttempts=0) {
-    return tryReadSocket(socket, data, size, maxAttempts);
+    if (!this->is_root_addr_initialized)
+    {
+        return tryReadSocket(socket, data, size, maxAttempts, &this->root_addr);
+        this->is_root_addr_initialized = true;
+    }else{
+        return tryReadSocket(socket, data, size, maxAttempts, nullptr);
+    }
 }
 void Socket::read(void* data, size_t size) {
     readSocket(socket, data, size);

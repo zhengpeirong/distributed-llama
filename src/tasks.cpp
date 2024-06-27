@@ -85,7 +85,7 @@ void syncSliceOfSlicedBuffer(unsigned int nThreads, unsigned int threadIndex, Tr
 
         // worker
         char* buffer = ctx->transformer->buffer->getSliced(bufferIndex, ctx->transformer->sliceIndex);
-        ctx->socket->write(buffer, bufferBytes,ctx->root_addr);
+        ctx->socket->write(buffer, bufferBytes);
     }
 }
 
