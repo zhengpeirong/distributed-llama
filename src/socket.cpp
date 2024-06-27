@@ -187,7 +187,7 @@ void printSend(int socket, const void *data, size_t size, int flags, const struc
 void SocketPool::write(unsigned int socketIndex, const void* data, size_t size) {
     assert(socketIndex >= 0 && socketIndex < nSockets);
     sentBytes += size;
-    printSend(sockets[socketIndex], data, size, 0, (struct sockaddr*)&addrs[socketIndex], sizeof(addrs[socketIndex]));
+    // printSend(sockets[socketIndex], data, size, 0, (struct sockaddr*)&addrs[socketIndex], sizeof(addrs[socketIndex]));
     writeSocket(sockets[socketIndex], data, size, addrs[socketIndex]);
 }
 
@@ -211,8 +211,8 @@ void SocketPool::writeMany(unsigned int n, SocketIo* ios) {
             if (io->size > 0) {
                 isWriting = true;
                 int socket = sockets[io->socketIndex];
-                printSend(socket, (const char*)io->data, io->size, 0, 
-                                   (struct sockaddr*)&addrs[io->socketIndex], sizeof(addrs[io->socketIndex]));
+                // printSend(socket, (const char*)io->data, io->size, 0, 
+                                //    (struct sockaddr*)&addrs[io->socketIndex], sizeof(addrs[io->socketIndex]));
                 ssize_t s = sendto(socket, (const char*)io->data, io->size, 0, 
                                    (struct sockaddr*)&addrs[io->socketIndex], sizeof(addrs[io->socketIndex]));
 
