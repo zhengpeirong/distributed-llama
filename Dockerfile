@@ -48,9 +48,9 @@ ARG CACHEBUST=1
 
 # Download model and run launch.py with automatic "no" input
 FROM base as download_model
-RUN cd distributed-llama; \
-    yes "N" | python3 launch.py tinyllama_1_1b_3t_q40; \
-    yes "N" | python3 launch.py llama3_8b_instruct_q40
+# RUN cd distributed-llama; \
+#     yes "N" | python3 launch.py tinyllama_1_1b_3t_q40; \
+#     yes "N" | python3 launch.py llama3_8b_instruct_q40
 
 
 # docker run container runtime, use env

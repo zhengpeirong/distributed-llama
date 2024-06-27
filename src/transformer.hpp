@@ -7,6 +7,7 @@
 #include "socket.hpp"
 
 typedef unsigned short pos_t;
+#define SEND_WEIGHTS false
 
 class MatmulSlice {
 public:
@@ -257,6 +258,7 @@ public:
     static Transformer loadRoot(char* data, TransformerSpec* spec, SocketPool* socketPool);
     static Transformer loadSliceFromDisk(TransformerSpec *spec, uint8_t sliceIndex, const char *weightFilePath);
     static Transformer loadSlice(TransformerSpec *spec, Socket *socket);
+    static Transformer loadSliceFromFile(TransformerSpec *spec, Socket* socket);
 
 private:
     Transformer(TransformerSpec* spec, uint8_t sliceIndex);

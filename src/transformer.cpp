@@ -603,10 +603,10 @@ static size_t loadRootMatmulWeights(char** target, char* source, size_t bytes) {
     return bytes;
 }
 
-// static size_t readSlicedMatmulWeights(MatmulSlice* slice, char* weights0, Socket* socket) {
-//     socket->read(weights0, slice->sliceBytes);
-//     return slice->sliceBytes;
-// }
+static size_t readSlicedMatmulWeights(MatmulSlice* slice, char* weights0, Socket* socket) {
+    socket->read(weights0, slice->sliceBytes);
+    return slice->sliceBytes;
+}
 
 Transformer Transformer::loadRootFromFile(const char* path, TransformerSpec* spec, SocketPool* socketPool) {
     MmapFile file;
@@ -686,6 +686,26 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, SocketPool*
     return transformer;
 }
 
+void saveWeightsToFile(const char* filePath, const char* weights, size_t size) {
+    FILE* file = fopen(filePath, "ab"); // Append mode
+    if (file == NULL) {
+        throw std::runtime_error("Cannot open file to save weights");
+    }
+
+    size_t written = fwrite(weights, 1, size, file);
+    if (written != size) {
+        throw std::runtime_error("Failed to write all weights to file");
+    }
+
+    fclose(file);
+}
+
+size_t readAndSaveWeights(MatmulSlice* slice, char* buffer, Socket* socket, const char* filePath) {
+    size_t bytesRead = readSlicedMatmulWeights(slice, buffer, socket);
+    saveWeightsToFile(filePath, buffer, slice->sliceBytes);
+    return bytesRead;
+}
+
 Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
     uint8_t sliceIndex;
     socket->read((char*)&sliceIndex, sizeof(uint8_t));
@@ -723,6 +743,9 @@ Transformer Transformer::loadSliceFromDisk(TransformerSpec* spec, uint8_t sliceI
     printf("💡 sliceIndex: %d\n", sliceIndex);
     printf("💡 nSlices: %d\n", spec->nSlices);
     Transformer transformer(spec, sliceIndex);
+    // Define a file path to save the weights
+    char filePath[256];
+    snprintf(filePath, sizeof(filePath), "weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
 
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
