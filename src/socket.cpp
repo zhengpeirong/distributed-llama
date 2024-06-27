@@ -144,24 +144,6 @@ SocketPool::~SocketPool() {
     }
 }
 
-
-void printWrite(unsigned int socketIndex, const void* data, size_t size, sockaddr_in* addrs){
-    printf("Socket index: %d\n", socketIndex);
-    printf("size: %ld\n", size);
-    // 将sockaddr_in结构体转换为字符串
-    char ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(addrs[socketIndex].sin_addr), ip, INET_ADDRSTRLEN);
-    // 打印地址信息
-    printf("addrs[socketIndex]: %s\n", ip);
-    printf("port: %d\n", ntohs(addrs[socketIndex].sin_port));
-    // 打印二进制数据
-    const unsigned char* byteData = static_cast<const unsigned char*>(data);
-    printf("Data: ");
-    for (size_t i = 0; i < size; ++i) {
-        printf("%02x ", byteData[i]);
-    }
-    printf("\n");
-}
 void printSend(int socket, const void *data, size_t size, int flags, const struct sockaddr *addr, socklen_t addrlen) {
     // 打印 socket 文件描述符
     printf("Socket: %d\n", socket);
@@ -193,7 +175,7 @@ void printSend(int socket, const void *data, size_t size, int flags, const struc
 void SocketPool::write(unsigned int socketIndex, const void* data, size_t size) {
     assert(socketIndex >= 0 && socketIndex < nSockets);
     sentBytes += size;
-    printWrite(socketIndex, data, size, addrs);
+    printSend(sockets[socketIndex], data, size, 0, (struct sockaddr*)&addrs[socketIndex], sizeof(addrs[socketIndex]));
     writeSocket(sockets[socketIndex], data, size, addrs[socketIndex]);
 }
 
@@ -297,6 +279,7 @@ void Socket::setTurbo(bool enabled) {return;
 }
 
 void Socket::write(const void* data, size_t size) {
+    printSend(socket, data, size, 0, (struct sockaddr*)&this->root_addr, sizeof(this->root_addr));
     writeSocket(socket, data, size, this->root_addr);
 }
 
