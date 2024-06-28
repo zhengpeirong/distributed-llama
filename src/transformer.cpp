@@ -701,6 +701,13 @@ void saveWeightsToFile(const char* filePath, const char* weights, size_t size) {
     }
 
     fclose(file);
+    // 检查文件大小
+    file = fopen(filePath, "rb");
+    fseek(file, 0, SEEK_END);
+    long fileSize = ftell(file);
+    fclose(file);
+    fileSize /= 1024 * 1024; // Convert to Mbytes
+    printf("File size after saving: %ld Mbytes\n", fileSize);
 }
 
 size_t readAndSaveWeights(MatmulSlice* slice, char* buffer, Socket* socket, const char* filePath) {
@@ -761,22 +768,19 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket, char* 
     }
     return transformer;
 }
-void loadWeightsFromFile(const char* filePath, char* buffer, size_t size) {
+size_t readAndLoadWeights(MatmulSlice* slice, char* buffer, const char* filePath, size_t offset) {
     FILE* file = fopen(filePath, "rb");
     if (file == NULL) {
         throw std::runtime_error("Cannot open file to read weights");
     }
 
-    size_t read = fread(buffer, 1, size, file);
-    if (read != size) {
+    fseek(file, offset, SEEK_SET); // Move to the correct offset
+    size_t read = fread(buffer, 1, slice->sliceBytes, file);
+    if (read != slice->sliceBytes) {
         throw std::runtime_error("Failed to read all weights from file");
     }
 
     fclose(file);
-}
-
-size_t readAndLoadWeights(MatmulSlice* slice, char* buffer, const char* filePath) {
-    loadWeightsFromFile(filePath, buffer, slice->sliceBytes);
     return slice->sliceBytes;
 }
 
@@ -809,28 +813,38 @@ Transformer Transformer::loadSliceFromFile(TransformerSpec* spec, Socket* socket
     std::string cwd = getCurrentWorkingDir();
     printf("Current Working Directory: %s\n", cwd.c_str());
 
+    size_t offset = 0;
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
         size_t blockBytes = 0;
         long t0 = timeMs();
 
-        blockBytes += readAndLoadWeights(block->q0Slice, block->q0, filePath);
-        blockBytes += readAndLoadWeights(block->k0Slice, block->k0, filePath);
-        blockBytes += readAndLoadWeights(block->v0Slice, block->v0, filePath);
-        blockBytes += readAndLoadWeights(block->wo0Slice, block->wo0, filePath);
+        blockBytes += readAndLoadWeights(block->q0Slice, block->q0, filePath, offset);
+        offset += block->q0Slice->sliceBytes;
+        blockBytes += readAndLoadWeights(block->k0Slice, block->k0, filePath, offset);
+        offset += block->k0Slice->sliceBytes;
+        blockBytes += readAndLoadWeights(block->v0Slice, block->v0, filePath, offset);
+        offset += block->v0Slice->sliceBytes;
+        blockBytes += readAndLoadWeights(block->wo0Slice, block->wo0, filePath, offset);
+        offset += block->wo0Slice->sliceBytes;
 
         if (spec->nExperts > 0) {
             for (int e = 0; e < spec->nExperts; e++) {
-                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeUp[e], filePath);
-                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeGate[e], filePath);
-                blockBytes += readAndLoadWeights(block->moeDown0Slice, block->moeDown[e], filePath);
+                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeUp[e], filePath, offset);
+                offset += block->moeUpAndGate0Slice->sliceBytes;
+                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeGate[e], filePath, offset);
+                offset += block->moeUpAndGate0Slice->sliceBytes;
+                blockBytes += readAndLoadWeights(block->moeDown0Slice, block->moeDown[e], filePath, offset);
+                offset += block->moeDown0Slice->sliceBytes;
             }
         } else {
-            blockBytes += readAndLoadWeights(block->w10Slice, block->w10, filePath);
-            blockBytes += readAndLoadWeights(block->w20Slice, block->w20, filePath);
-            blockBytes += readAndLoadWeights(block->w30Slice, block->w30, filePath);
+            blockBytes += readAndLoadWeights(block->w10Slice, block->w10, filePath, offset);
+            offset += block->w10Slice->sliceBytes;
+            blockBytes += readAndLoadWeights(block->w20Slice, block->w20, filePath, offset);
+            offset += block->w20Slice->sliceBytes;
+            blockBytes += readAndLoadWeights(block->w30Slice, block->w30, filePath, offset);
+            offset += block->w30Slice->sliceBytes;
         }
-
         float kbs = blockBytes / (float)(timeMs() - t0);
         printf("⏩ Loaded %ld kB for block %d (%.0f kB/s)\n", blockBytes / 1024, i, kbs);
     }
