@@ -1,5 +1,7 @@
 .vscode/settings.json
-tcpdump_logs/*tcpdump_logs/*
+tcpdump_logs/*
+models/*
+*.sh
 *.py
 *.md
 !README.md
