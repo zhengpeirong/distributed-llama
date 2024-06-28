@@ -781,6 +781,9 @@ Transformer Transformer::loadSliceFromFile(TransformerSpec* spec, Socket* socket
 
     char filePath[256];
     snprintf(filePath, sizeof(filePath), "models/weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
+    printf("💡 Read Model from: %s\n", filePath);
+    std::string cwd = getCurrentWorkingDir();
+    printf("Current Working Directory: %s\n", cwd.c_str());
 
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
