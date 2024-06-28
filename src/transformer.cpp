@@ -709,7 +709,7 @@ size_t readAndSaveWeights(MatmulSlice* slice, char* buffer, Socket* socket, cons
     return bytesRead;
 }
 
-Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
+Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket, char* modelPath) {
     uint8_t sliceIndex;
     socket->read((char*)&sliceIndex, sizeof(uint8_t));
     socket->read((char*)spec, sizeof(TransformerSpec));
@@ -720,8 +720,19 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
     assert(sliceIndex >= 1);
     Transformer transformer(spec, sliceIndex);
     // Define a file path to save the weights
+    // 提取目录部分
+    const char* lastSlash = strrchr(modelPath, '/');
+    if (!lastSlash) {
+        fprintf(stderr, "Invalid model path: %s\n", modelPath);
+        // 处理错误情况，根据需要可以选择抛出异常或返回一个默认值
+        return transformer; // 或者其他适当的错误处理
+    }
+    // 计算目录部分的长度
+    size_t dirLength = lastSlash - modelPath + 1;
+    // 创建并格式化文件路径字符串
     char filePath[256];
-    snprintf(filePath, sizeof(filePath), "models/weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
+    snprintf(filePath, sizeof(filePath), "%.*sweights_slice_%d_%d.bin", (int)dirLength, modelPath, sliceIndex, spec->nSlices);
+    printf("💡 Save Model to: %s\n", filePath);
 
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
@@ -769,7 +780,7 @@ size_t readAndLoadWeights(MatmulSlice* slice, char* buffer, const char* filePath
     return slice->sliceBytes;
 }
 
-Transformer Transformer::loadSliceFromFile(TransformerSpec* spec, Socket* socket) {
+Transformer Transformer::loadSliceFromFile(TransformerSpec* spec, Socket* socket, char* modelPath) {
     uint8_t sliceIndex;
     socket->read((char*)&sliceIndex, sizeof(uint8_t));
     socket->read((char*)spec, sizeof(TransformerSpec));
@@ -779,9 +790,22 @@ Transformer Transformer::loadSliceFromFile(TransformerSpec* spec, Socket* socket
     assert(sliceIndex >= 1);
     Transformer transformer(spec, sliceIndex);
 
+    // 提取目录部分
+    const char* lastSlash = strrchr(modelPath, '/');
+    if (!lastSlash) {
+        fprintf(stderr, "Invalid model path: %s\n", modelPath);
+        // 处理错误情况，根据需要可以选择抛出异常或返回一个默认值
+        return transformer; // 或者其他适当的错误处理
+    }
+
+    // 计算目录部分的长度
+    size_t dirLength = lastSlash - modelPath + 1;
+    
+    // 创建并格式化文件路径字符串
     char filePath[256];
-    snprintf(filePath, sizeof(filePath), "models/weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
+    snprintf(filePath, sizeof(filePath), "%.*sweights_slice_%d_%d.bin", (int)dirLength, modelPath, sliceIndex, spec->nSlices);
     printf("💡 Read Model from: %s\n", filePath);
+
     std::string cwd = getCurrentWorkingDir();
     printf("Current Working Directory: %s\n", cwd.c_str());
 
