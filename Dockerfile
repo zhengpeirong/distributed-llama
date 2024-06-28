@@ -38,7 +38,9 @@ RUN set -eux; \
     # Clone the specified Git repository
     git clone ${A_GIT_REPO_URL} distributed-llama; \
     cd distributed-llama; \
-    git checkout -b dev/docker origin/dev/docker; \
+    # git checkout -b dev/docker origin/dev/docker; \
+    git checkout -b dev/save-split-weights origin/dev/save-split-weights; \
+    sed -i 's/#define SEND_WEIGHTS false/#define SEND_WEIGHTS true/' src/transformer.hpp \
     make dllama; \
     \
     echo "Compile Distributed Llama Done\n"

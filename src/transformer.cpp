@@ -721,7 +721,7 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket) {
     Transformer transformer(spec, sliceIndex);
     // Define a file path to save the weights
     char filePath[256];
-    snprintf(filePath, sizeof(filePath), "weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
+    snprintf(filePath, sizeof(filePath), "models/weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
 
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
@@ -780,7 +780,7 @@ Transformer Transformer::loadSliceFromFile(TransformerSpec* spec, Socket* socket
     Transformer transformer(spec, sliceIndex);
 
     char filePath[256];
-    snprintf(filePath, sizeof(filePath), "weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
+    snprintf(filePath, sizeof(filePath), "models/weights_slice_%d_%d.bin", sliceIndex, spec->nSlices);
 
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];

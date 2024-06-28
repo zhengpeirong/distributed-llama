@@ -7,7 +7,7 @@
 #include "socket.hpp"
 
 typedef unsigned short pos_t;
-#define SEND_WEIGHTS false
+#define SEND_WEIGHTS true
 
 class MatmulSlice {
 public:
