@@ -5,6 +5,7 @@
 #include <vector>
 #include <sys/time.h>
 #include "utils.hpp"
+#include <limits.h>
 
 #define BUFFER_ALIGNMENT 16
 
@@ -15,6 +16,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 #endif
+
+std::string getCurrentWorkingDir() {
+    char temp[PATH_MAX];
+    if (getcwd(temp, sizeof(temp)) != nullptr) {
+        return std::string(temp);
+    } else {
+        return std::string("");
+    }
+}
 
 void* newBuffer(size_t size) {
     void* buffer;

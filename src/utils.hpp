@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cstdio>
 #include "common/pthread.h"
+#include <string>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -15,6 +16,7 @@
 void* newBuffer(size_t size);
 void freeBuffer(void* buffer);
 
+std::string getCurrentWorkingDir();
 unsigned long timeMs();
 unsigned int randomU32(unsigned long long *state);
 float randomF32(unsigned long long *state);
