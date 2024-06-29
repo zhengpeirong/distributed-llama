@@ -8,6 +8,8 @@ Usage&Function: the client should specify the model path.
 ```sh
 sudo nice -n -20 ./dllama worker --port 9998 --nthreads 4  --model models/llama3_8b_q40/dllama_model_llama3_8b_q40.m
 ```
+Known issue:
+`readAndSaveWeights` should clear the file each inference.
 Plan: not merge to others.
 ## dev/udp
 Prerequisite: `dev/save-split-weights` save weights.

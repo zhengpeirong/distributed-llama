@@ -698,6 +698,13 @@ void saveWeightsToFile(const char* filePath, const char* weights, size_t size) {
     }
 
     fclose(file);
+    // 检查文件大小
+    file = fopen(filePath, "rb");
+    fseek(file, 0, SEEK_END);
+    long fileSize = ftell(file);
+    fclose(file);
+    fileSize /= 1024 * 1024; // Convert to Mbytes
+    printf("File size after saving: %ld Mbytes\n", fileSize);
 }
 
 size_t readAndSaveWeights(MatmulSlice* slice, char* buffer, Socket* socket, const char* filePath) {
@@ -759,93 +766,19 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket, char* 
     }
     return transformer;
 }
-// static size_t loadSlicedMatmulWeightsFromFile(uint8_t sliceIndex, MatmulSlice* slice, char** weights0, const char* weightFilePath) {
-//     // 打开权重文件
-//     FILE* file = fopen(weightFilePath, "rb");
-//     if (!file) {
-//         throw std::runtime_error("Cannot open weight file");
-//     }
-
-//     // 临时缓冲区，用于存储整个权重矩阵
-//     char* temp = (char*)malloc(slice->bytes);
-//     if (fread(temp, 1, slice->bytes, file) != slice->bytes) {
-//         fclose(file);
-//         FREE_BUFFER(temp);
-//         throw std::runtime_error("Failed to read weights from file");
-//     }
-//     fclose(file);
-
-//     // 分割权重并复制到目标缓冲区
-//     size_t loadedBytes = slice->splitWeights(sliceIndex, temp, *weights0);
-
-//     // 释放临时缓冲区
-//     FREE_BUFFER(temp);
-//     // TODO: make sure the loadedBytes is correct
-//     return loadedBytes;
-// }
-// Transformer Transformer::loadSliceFromDisk(TransformerSpec* spec, uint8_t sliceIndex, const char* weightFilePath) {
-//     printf("💡 sliceIndex: %d\n", sliceIndex);
-//     printf("💡 nSlices: %d\n", spec->nSlices);
-//     Transformer transformer(spec, sliceIndex);
-//     // Define a file path to save the weights
-//     // 提取目录部分
-//     const char* lastSlash = strrchr(modelPath, '/');
-//     if (!lastSlash) {
-//         fprintf(stderr, "Invalid model path: %s\n", modelPath);
-//         // 处理错误情况，根据需要可以选择抛出异常或返回一个默认值
-//         return transformer; // 或者其他适当的错误处理
-//     }
-//     // 计算目录部分的长度
-//     size_t dirLength = lastSlash - modelPath + 1;
-//     // 创建并格式化文件路径字符串
-//     char filePath[256];
-//     snprintf(filePath, sizeof(filePath), "%.*sweights_slice_%d_%d.bin", (int)dirLength, modelPath, sliceIndex, spec->nSlices);
-//     printf("💡 Save Model to: %s\n", filePath);
-
-//     for (int i = 0; i < spec->nLayers; i++) {
-//         TransformerBlock* block = transformer.blocks[i];
-//         size_t blockBytes = 0;
-//         long t0 = timeMs();
-//         blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->q0Slice, &block->q0, weightFilePath);
-//         blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->k0Slice, &block->k0, weightFilePath);
-//         blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->v0Slice, &block->v0, weightFilePath);
-//         blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->wo0Slice, &block->wo0, weightFilePath);
-
-//         if (spec->nExperts > 0) {
-//             for (int e = 0; e < spec->nExperts; e++) {
-//                 blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeUpAndGate0Slice, &block->moeUp[e], weightFilePath);
-//                 blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeUpAndGate0Slice, &block->moeGate[e], weightFilePath);
-//                 blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->moeDown0Slice, &block->moeDown[e], weightFilePath);
-//             }
-//         } else {
-//             blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w10Slice, &block->w10, weightFilePath);
-//             blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w20Slice, &block->w20, weightFilePath);
-//             blockBytes += loadSlicedMatmulWeightsFromFile(sliceIndex, block->w30Slice, &block->w30, weightFilePath);
-//         }
-
-//         float kbs = blockBytes / (float)(timeMs() - t0);
-//         printf("⏩ Loaded %ld kB for block %d (%.0f kB/s)\n", blockBytes / 1024, i, kbs);
-//     }
-//     printf("Start inference\n");
-//     return transformer;
-// }
-
-void loadWeightsFromFile(const char* filePath, char* buffer, size_t size) {
+size_t readAndLoadWeights(MatmulSlice* slice, char* buffer, const char* filePath, size_t offset) {
     FILE* file = fopen(filePath, "rb");
     if (file == NULL) {
         throw std::runtime_error("Cannot open file to read weights");
     }
 
-    size_t read = fread(buffer, 1, size, file);
-    if (read != size) {
+    fseek(file, offset, SEEK_SET); // Move to the correct offset
+    size_t read = fread(buffer, 1, slice->sliceBytes, file);
+    if (read != slice->sliceBytes) {
         throw std::runtime_error("Failed to read all weights from file");
     }
 
     fclose(file);
-}
-
-size_t readAndLoadWeights(MatmulSlice* slice, char* buffer, const char* filePath) {
-    loadWeightsFromFile(filePath, buffer, slice->sliceBytes);
     return slice->sliceBytes;
 }
 
@@ -878,28 +811,38 @@ Transformer Transformer::loadSliceFromFile(TransformerSpec* spec, Socket* socket
     std::string cwd = getCurrentWorkingDir();
     printf("Current Working Directory: %s\n", cwd.c_str());
 
+    size_t offset = 0;
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
         size_t blockBytes = 0;
         long t0 = timeMs();
 
-        blockBytes += readAndLoadWeights(block->q0Slice, block->q0, filePath);
-        blockBytes += readAndLoadWeights(block->k0Slice, block->k0, filePath);
-        blockBytes += readAndLoadWeights(block->v0Slice, block->v0, filePath);
-        blockBytes += readAndLoadWeights(block->wo0Slice, block->wo0, filePath);
+        blockBytes += readAndLoadWeights(block->q0Slice, block->q0, filePath, offset);
+        offset += block->q0Slice->sliceBytes;
+        blockBytes += readAndLoadWeights(block->k0Slice, block->k0, filePath, offset);
+        offset += block->k0Slice->sliceBytes;
+        blockBytes += readAndLoadWeights(block->v0Slice, block->v0, filePath, offset);
+        offset += block->v0Slice->sliceBytes;
+        blockBytes += readAndLoadWeights(block->wo0Slice, block->wo0, filePath, offset);
+        offset += block->wo0Slice->sliceBytes;
 
         if (spec->nExperts > 0) {
             for (int e = 0; e < spec->nExperts; e++) {
-                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeUp[e], filePath);
-                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeGate[e], filePath);
-                blockBytes += readAndLoadWeights(block->moeDown0Slice, block->moeDown[e], filePath);
+                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeUp[e], filePath, offset);
+                offset += block->moeUpAndGate0Slice->sliceBytes;
+                blockBytes += readAndLoadWeights(block->moeUpAndGate0Slice, block->moeGate[e], filePath, offset);
+                offset += block->moeUpAndGate0Slice->sliceBytes;
+                blockBytes += readAndLoadWeights(block->moeDown0Slice, block->moeDown[e], filePath, offset);
+                offset += block->moeDown0Slice->sliceBytes;
             }
         } else {
-            blockBytes += readAndLoadWeights(block->w10Slice, block->w10, filePath);
-            blockBytes += readAndLoadWeights(block->w20Slice, block->w20, filePath);
-            blockBytes += readAndLoadWeights(block->w30Slice, block->w30, filePath);
+            blockBytes += readAndLoadWeights(block->w10Slice, block->w10, filePath, offset);
+            offset += block->w10Slice->sliceBytes;
+            blockBytes += readAndLoadWeights(block->w20Slice, block->w20, filePath, offset);
+            offset += block->w20Slice->sliceBytes;
+            blockBytes += readAndLoadWeights(block->w30Slice, block->w30, filePath, offset);
+            offset += block->w30Slice->sliceBytes;
         }
-
         float kbs = blockBytes / (float)(timeMs() - t0);
         printf("⏩ Loaded %ld kB for block %d (%.0f kB/s)\n", blockBytes / 1024, i, kbs);
     }
