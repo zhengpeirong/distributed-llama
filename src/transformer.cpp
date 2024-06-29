@@ -8,6 +8,7 @@
 // #include "socket.hpp"
 #include "socket-udp.hpp"
 #include "transformer.hpp"
+#include <unistd.h>
 
 #define ALLOC_WEIGHTS true
 #define IS_ROOT_SLICE(sliceIndex) (sliceIndex == 0)
@@ -629,6 +630,7 @@ Transformer Transformer::loadRoot(char* data, TransformerSpec* spec, SocketPool*
         for (uint8_t sliceIndex = 1; sliceIndex < spec->nSlices; sliceIndex++) {
             unsigned int socketIndex = sliceIndex - 1;
             socketPool->write(socketIndex, (char*)&sliceIndex, sizeof(uint8_t));
+            usleep(1000); // 1ms
             socketPool->write(socketIndex, (char*)spec, sizeof(TransformerSpec));
         }
     }
