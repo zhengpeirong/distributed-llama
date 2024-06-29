@@ -8,7 +8,7 @@
 #include <netinet/in.h>
 #include <mutex>
 #include <memory>
-
+#include <string> 
 
 void initSockets();
 void cleanupSockets();
