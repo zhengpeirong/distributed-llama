@@ -2,15 +2,17 @@
 
 # Distributed Llama
 ## dev/save-split-weights
-Description: Based on TCP. The goal is to save model partition weights in the model folder.
+1. Description: Based on TCP. The goal is to save model partition weights in the model folder.
 
-Usage&Function: the client should specify the model path. 
+2. Usage&Function: the client should specify the model path. 
 ```sh
 sudo nice -n -20 ./dllama worker --port 9998 --nthreads 4  --model models/llama3_8b_q40/dllama_model_llama3_8b_q40.m
 ```
-Known issue:
-`readAndSaveWeights` should clear the file each inference.
-Plan: not merge to others.
+
+`readAndSaveWeights` will clear the file in each inference.
+
+3. Test: set `temperature 0.0` to test the result. And they are the same.
+4. Plan: not merge to others.
 ##
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/b4rtaz/distributed-llama/.github%2Fworkflows%2Fmain.yml?style=flat-square)](https://github.com/b4rtaz/distributed-llama/actions) [![License: MIT](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square)](/LICENSE) [![Discord](https://discordapp.com/api/guilds/1245814812353495070/widget.png?style=shield)](https://discord.com/widget?id=1245814812353495070&theme=dark)
 

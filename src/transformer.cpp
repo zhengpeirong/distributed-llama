@@ -606,11 +606,6 @@ static size_t loadRootMatmulWeights(char** target, char* source, size_t bytes) {
     return bytes;
 }
 
-static size_t readSlicedMatmulWeights(MatmulSlice* slice, char* weights0, Socket* socket) {
-    socket->read(weights0, slice->sliceBytes);
-    return slice->sliceBytes;
-}
-
 Transformer Transformer::loadRootFromFile(const char* path, TransformerSpec* spec, SocketPool* socketPool) {
     MmapFile file;
     openMmapFile(&file, path, spec->fileSize);
@@ -694,12 +689,10 @@ void saveWeightsToFile(const char* filePath, const char* weights, size_t size) {
     if (file == NULL) {
         throw std::runtime_error("Cannot open file to save weights");
     }
-
     size_t written = fwrite(weights, 1, size, file);
     if (written != size) {
         throw std::runtime_error("Failed to write all weights to file");
     }
-
     fclose(file);
     // 检查文件大小
     file = fopen(filePath, "rb");
@@ -711,9 +704,9 @@ void saveWeightsToFile(const char* filePath, const char* weights, size_t size) {
 }
 
 size_t readAndSaveWeights(MatmulSlice* slice, char* buffer, Socket* socket, const char* filePath) {
-    size_t bytesRead = readSlicedMatmulWeights(slice, buffer, socket);
+    socket->read(buffer, slice->sliceBytes);
     saveWeightsToFile(filePath, buffer, slice->sliceBytes);
-    return bytesRead;
+    return slice->sliceBytes;
 }
 
 Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket, char* modelPath) {
@@ -738,9 +731,12 @@ Transformer Transformer::loadSlice(TransformerSpec* spec, Socket* socket, char* 
     size_t dirLength = lastSlash - modelPath + 1;
     // 创建并格式化文件路径字符串
     char filePath[256];
-    snprintf(filePath, sizeof(filePath), "%.*sweights_slice_%d_%d.bin", (int)dirLength, modelPath, sliceIndex, spec->nSlices);
+    snprintf(filePath, sizeof(filePath), "%.*sweightSlice_%d_%d.bin", (int)dirLength, modelPath, spec->nSlices, sliceIndex);
     printf("💡 Save Model to: %s\n", filePath);
-
+    // 删除已有的文件
+    if (remove(filePath) == 0) {
+        printf("Deleted existing file: %s\n", filePath);
+    }    
     for (int i = 0; i < spec->nLayers; i++) {
         TransformerBlock* block = transformer.blocks[i];
         size_t blockBytes = 0;
@@ -807,7 +803,7 @@ Transformer Transformer::loadSliceFromFile(TransformerSpec* spec, Socket* socket
     
     // 创建并格式化文件路径字符串
     char filePath[256];
-    snprintf(filePath, sizeof(filePath), "%.*sweights_slice_%d_%d.bin", (int)dirLength, modelPath, sliceIndex, spec->nSlices);
+    snprintf(filePath, sizeof(filePath), "%.*sweightSlice_%d_%d.bin", (int)dirLength, modelPath, spec->nSlices, sliceIndex);
     printf("💡 Read Model from: %s\n", filePath);
 
     std::string cwd = getCurrentWorkingDir();
