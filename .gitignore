@@ -2,6 +2,7 @@
 tcpdump_logs/*
 models/*
 *.sh
+*.bin
 *.py
 *.md
 !README.md
